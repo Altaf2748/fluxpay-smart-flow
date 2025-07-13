@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff } from 'lucide-react';
+import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

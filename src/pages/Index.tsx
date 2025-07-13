@@ -6,9 +6,11 @@ import { PaymentFlow } from '@/components/PaymentFlow';
 import { RewardsSection } from '@/components/RewardsSection';
 import { FeaturesOverview } from '@/components/FeaturesOverview';
 import { Navigation } from '@/components/Navigation';
+import { useAuth } from '@/components/AuthProvider';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

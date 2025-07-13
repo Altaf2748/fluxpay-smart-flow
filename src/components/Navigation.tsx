@@ -1,7 +1,9 @@
 
 import React from 'react';
-import { CreditCard, Home, Gift, Zap } from 'lucide-react';
+import { CreditCard, Home, Gift, Zap, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from './AuthProvider';
+import { Button } from '@/components/ui/button';
 
 interface NavigationProps {
   activeTab: string;
@@ -9,12 +11,18 @@ interface NavigationProps {
 }
 
 export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
+  const { signOut, user } = useAuth();
+
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: CreditCard },
     { id: 'pay', label: 'Pay', icon: Zap },
     { id: 'rewards', label: 'Rewards', icon: Gift },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
@@ -29,25 +37,39 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
             </span>
           </div>
           
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                    activeTab === item.id
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden sm:block">{item.label}</span>
-                </button>
-              );
-            })}
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                      activeTab === item.id
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:block">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:block">Sign Out</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>
