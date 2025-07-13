@@ -1,12 +1,29 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import { Hero } from '@/components/Hero';
+import { WalletDashboard } from '@/components/WalletDashboard';
+import { PaymentFlow } from '@/components/PaymentFlow';
+import { RewardsSection } from '@/components/RewardsSection';
+import { FeaturesOverview } from '@/components/FeaturesOverview';
+import { Navigation } from '@/components/Navigation';
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      {activeTab === 'home' && (
+        <>
+          <Hero />
+          <FeaturesOverview />
+        </>
+      )}
+      
+      {activeTab === 'dashboard' && <WalletDashboard />}
+      {activeTab === 'pay' && <PaymentFlow />}
+      {activeTab === 'rewards' && <RewardsSection />}
     </div>
   );
 };
