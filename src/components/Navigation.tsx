@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CreditCard, Home, Gift, Zap, LogOut } from 'lucide-react';
+import { CreditCard, Home, Gift, Zap, LogOut, Settings, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
     { id: 'home', label: 'Home', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: CreditCard },
     { id: 'pay', label: 'Pay', icon: Zap },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'rewards', label: 'Rewards', icon: Gift },
   ];
 

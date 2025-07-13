@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      linked_banks: {
+        Row: {
+          created_at: string
+          id: string
+          status: string | null
+          user_id: string
+          vpa: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          user_id: string
+          vpa: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          user_id?: string
+          vpa?: string
+        }
+        Relationships: []
+      }
+      linked_cards: {
+        Row: {
+          card_last4: string
+          card_token: string
+          card_type: string | null
+          created_at: string
+          expiry_month: number
+          expiry_year: number
+          id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          card_last4: string
+          card_token: string
+          card_type?: string | null
+          created_at?: string
+          expiry_month: number
+          expiry_year: number
+          id?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          card_last4?: string
+          card_token?: string
+          card_type?: string | null
+          created_at?: string
+          expiry_month?: number
+          expiry_year?: number
+          id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -45,6 +105,42 @@ export type Database = {
           last_name?: string | null
           phone?: string | null
           tier_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          merchant: string
+          rail: string
+          status: string | null
+          transaction_ref: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          merchant: string
+          rail: string
+          status?: string | null
+          transaction_ref?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          merchant?: string
+          rail?: string
+          status?: string | null
+          transaction_ref?: string | null
           updated_at?: string
           user_id?: string
         }

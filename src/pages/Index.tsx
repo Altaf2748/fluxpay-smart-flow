@@ -5,6 +5,8 @@ import { WalletDashboard } from '@/components/WalletDashboard';
 import { PaymentFlow } from '@/components/PaymentFlow';
 import { RewardsSection } from '@/components/RewardsSection';
 import { FeaturesOverview } from '@/components/FeaturesOverview';
+import { Settings } from '@/components/Settings';
+import { TransactionHistory } from '@/components/TransactionHistory';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -25,6 +27,8 @@ const Index = () => {
       
       {activeTab === 'dashboard' && <WalletDashboard />}
       {activeTab === 'pay' && <PaymentFlow />}
+      {activeTab === 'history' && <TransactionHistory />}
+      {activeTab === 'settings' && <Settings />}
       {activeTab === 'rewards' && <RewardsSection />}
     </div>
   );

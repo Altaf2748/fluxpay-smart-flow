@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const PaymentFlow = () => {
   const [amount, setAmount] = useState('');
@@ -13,6 +15,9 @@ export const PaymentFlow = () => {
   const [showRouting, setShowRouting] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('');
   const [paymentComplete, setPaymentComplete] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentResult, setPaymentResult] = useState<any>(null);
+  const { toast } = useToast();
 
   const handleAmountChange = (value: string) => {
     setAmount(value);
@@ -32,7 +37,7 @@ export const PaymentFlow = () => {
 
   const paymentMethods = [
     {
-      id: 'upi',
+      id: 'UPI',
       name: 'UPI Payment',
       icon: Smartphone,
       recommended: true,
@@ -40,7 +45,7 @@ export const PaymentFlow = () => {
       description: 'Instant, secure bank transfer'
     },
     {
-      id: 'card',
+      id: 'CARD',
       name: 'Credit Card',
       icon: CreditCard,
       recommended: false,
@@ -49,34 +54,110 @@ export const PaymentFlow = () => {
     }
   ];
 
-  const handlePayment = () => {
-    // Simulate payment processing
-    setTimeout(() => {
+  const handlePayment = async () => {
+    if (!selectedMethod || !amount || !merchant) return;
+
+    setPaymentLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: {
+          merchant,
+          amount: parseFloat(amount),
+          rail: selectedMethod
+        }
+      });
+
+      if (error) throw error;
+
+      setPaymentResult(data);
       setPaymentComplete(true);
-    }, 2000);
+
+      if (data.success) {
+        toast({
+          title: "Payment Successful!",
+          description: `₹${amount} paid to ${merchant}`,
+        });
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: data.message || "Please try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Error",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setPaymentResult({ success: false, message: error.message });
+      setPaymentComplete(true);
+    } finally {
+      setPaymentLoading(false);
+    }
   };
 
-  if (paymentComplete) {
+  const resetPayment = () => {
+    setPaymentComplete(false);
+    setPaymentResult(null);
+    setAmount('');
+    setShowRouting(false);
+    setSelectedMethod('');
+    setPaymentLoading(false);
+  };
+
+  if (paymentComplete && paymentResult) {
     return (
       <div className="max-w-md mx-auto p-6">
-        <Card className="text-center bg-green-50 border-green-200">
+        <Card className={`text-center ${paymentResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
           <CardContent className="p-8">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-white" />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              paymentResult.success ? 'bg-green-500' : 'bg-red-500'
+            }`}>
+              {paymentResult.success ? (
+                <CheckCircle className="w-8 h-8 text-white" />
+              ) : (
+                <AlertCircle className="w-8 h-8 text-white" />
+              )}
             </div>
-            <h2 className="text-2xl font-bold text-green-800 mb-2">Payment Successful!</h2>
-            <p className="text-green-600 mb-4">₹{amount} paid to {merchant}</p>
-            <div className="bg-white rounded-lg p-4 mb-6">
-              <div className="flex justify-between text-sm mb-2">
-                <span>Cashback Earned</span>
-                <span className="font-semibold text-green-600">₹{Math.round(parseFloat(amount) * 0.05)}</span>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              paymentResult.success ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {paymentResult.success ? 'Payment Successful!' : 'Payment Failed'}
+            </h2>
+            <p className={`mb-4 ${
+              paymentResult.success ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {paymentResult.success 
+                ? `₹${amount} paid to ${merchant}` 
+                : paymentResult.message
+              }
+            </p>
+            {paymentResult.success && (
+              <div className="bg-white rounded-lg p-4 mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Cashback Earned</span>
+                  <span className="font-semibold text-green-600">
+                    ₹{Math.round(parseFloat(amount) * (selectedMethod === 'UPI' ? 0.05 : 0.02))}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Reward Points</span>
+                  <span className="font-semibold text-yellow-600">
+                    +{Math.round(parseFloat(amount) * (selectedMethod === 'UPI' ? 0.05 : 0.02))} pts
+                  </span>
+                </div>
+                {paymentResult.transaction && (
+                  <div className="flex justify-between text-sm mt-2 pt-2 border-t">
+                    <span>Transaction ID</span>
+                    <span className="font-mono text-xs">{paymentResult.transaction.transaction_ref}</span>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Reward Points</span>
-                <span className="font-semibold text-yellow-600">+{Math.round(parseFloat(amount) * 0.05)} pts</span>
-              </div>
-            </div>
-            <Button onClick={() => {setPaymentComplete(false); setAmount(''); setShowRouting(false); setSelectedMethod('');}}>
+            )}
+            <Button onClick={resetPayment}>
               Make Another Payment
             </Button>
           </CardContent>
@@ -119,6 +200,7 @@ export const PaymentFlow = () => {
                 onChange={(e) => handleAmountChange(e.target.value)}
                 placeholder="0.00"
                 className="pl-8 text-lg h-12"
+                disabled={paymentLoading}
               />
             </div>
           </div>
@@ -148,12 +230,12 @@ export const PaymentFlow = () => {
                 return (
                   <div
                     key={method.id}
-                    onClick={() => setSelectedMethod(method.id)}
+                    onClick={() => !paymentLoading && setSelectedMethod(method.id)}
                     className={`p-4 border rounded-lg cursor-pointer transition-all ${
                       selectedMethod === method.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    } ${paymentLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -185,10 +267,20 @@ export const PaymentFlow = () => {
           {selectedMethod && (
             <Button
               onClick={handlePayment}
+              disabled={paymentLoading}
               className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
-              Pay ₹{amount} with {paymentMethods.find(m => m.id === selectedMethod)?.name}
-              <ArrowRight className="ml-2 w-4 h-4" />
+              {paymentLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Processing Payment...
+                </>
+              ) : (
+                <>
+                  Pay ₹{amount} with {paymentMethods.find(m => m.id === selectedMethod)?.name}
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </>
+              )}
             </Button>
           )}
         </CardContent>

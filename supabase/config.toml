@@ -1,1 +1,30 @@
+
 project_id = "lgwofufhtkbqcvcwsuen"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 9999
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://lgwofufhtkbqcvcwsuen.supabase.co"]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+security_update_password_require_reauthentication = true
+external_email_enabled = true
+external_phone_enabled = true
+
+[realtime]
+enabled = true
+port = 4000
+
+[functions.process-payment]
+verify_jwt = true
+
+[functions.link-payment-method]
+verify_jwt = true
