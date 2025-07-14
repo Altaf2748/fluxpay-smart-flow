@@ -7,6 +7,9 @@ import { RewardsSection } from '@/components/RewardsSection';
 import { FeaturesOverview } from '@/components/FeaturesOverview';
 import { Settings } from '@/components/Settings';
 import { TransactionHistory } from '@/components/TransactionHistory';
+import { Analytics } from '@/components/Analytics';
+import { Offers } from '@/components/Offers';
+import { P2PPayment } from '@/components/P2PPayment';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -25,11 +28,21 @@ const Index = () => {
         </>
       )}
       
-      {activeTab === 'dashboard' && <WalletDashboard />}
+      {activeTab === 'dashboard' && (
+        <WalletDashboard 
+          onNavigateToPayment={() => setActiveTab('pay')}
+          onNavigateToSettings={() => setActiveTab('settings')}
+          onNavigateToAnalytics={() => setActiveTab('analytics')}
+          onNavigateToOffers={() => setActiveTab('offers')}
+        />
+      )}
       {activeTab === 'pay' && <PaymentFlow />}
+      {activeTab === 'p2p' && <P2PPayment />}
       {activeTab === 'history' && <TransactionHistory />}
       {activeTab === 'settings' && <Settings />}
       {activeTab === 'rewards' && <RewardsSection />}
+      {activeTab === 'analytics' && <Analytics />}
+      {activeTab === 'offers' && <Offers />}
     </div>
   );
 };

@@ -28,3 +28,18 @@ verify_jwt = true
 
 [functions.link-payment-method]
 verify_jwt = true
+
+[functions.get-balances]
+verify_jwt = true
+
+[functions.get-transaction-summary]
+verify_jwt = true
+
+[functions.get-offers]
+verify_jwt = true
+
+[functions.resolve-upi]
+verify_jwt = true
+
+[functions.pay-p2p]
+verify_jwt = true

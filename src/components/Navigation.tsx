@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CreditCard, Home, Gift, Zap, LogOut, Settings, History } from 'lucide-react';
+import { CreditCard, Home, Gift, Zap, LogOut, Settings, History, Users, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,13 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
   const { signOut, user } = useAuth();
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'dashboard', label: 'Dashboard', icon: CreditCard },
-    { id: 'pay', label: 'Pay', icon: Zap },
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'pay', label: 'Pay', icon: CreditCard },
+    { id: 'p2p', label: 'Send Money', icon: Users },
     { id: 'history', label: 'History', icon: History },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'offers', label: 'Offers', icon: Gift },
     { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'rewards', label: 'Rewards', icon: Gift },
   ];
 
   const handleSignOut = async () => {

@@ -1,13 +1,57 @@
 
-import React from 'react';
-import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap, Plus, BarChart3, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-export const WalletDashboard = () => {
+interface WalletDashboardProps {
+  onNavigateToPayment?: () => void;
+  onNavigateToSettings?: () => void;
+  onNavigateToAnalytics?: () => void;
+  onNavigateToOffers?: () => void;
+}
+
+export const WalletDashboard: React.FC<WalletDashboardProps> = ({ 
+  onNavigateToPayment, 
+  onNavigateToSettings,
+  onNavigateToAnalytics,
+  onNavigateToOffers 
+}) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [balances, setBalances] = useState({ upiBalance: 0, cardBalance: 0, cardCreditLimit: 0 });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchBalances();
+  }, []);
+
+  const fetchBalances = async () => {
+    try {
+      setLoading(true);
+      const { data: response, error } = await supabase.functions.invoke('get-balances');
+      
+      if (error) throw error;
+      
+      setBalances({
+        upiBalance: response.upiBalance,
+        cardBalance: response.cardBalance,
+        cardCreditLimit: response.cardCreditLimit
+      });
+    } catch (error) {
+      console.error('Error fetching balances:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch account balances",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const recentTransactions = [
     { id: 1, merchant: 'Starbucks Coffee', amount: -285, type: 'UPI', reward: 14, time: '2 min ago' },
@@ -34,7 +78,7 @@ export const WalletDashboard = () => {
                 <CardTitle className="text-blue-100 text-sm font-medium">Total Balance</CardTitle>
                 <div className="flex items-center mt-2">
                   <span className="text-3xl font-bold">
-                    {balanceVisible ? '₹12,847' : '₹***,***'}
+                    {loading ? '₹***,***' : balanceVisible ? `₹${(balances.upiBalance + balances.cardBalance).toLocaleString()}` : '₹***,***'}
                   </span>
                   <Button
                     variant="ghost"
@@ -57,7 +101,7 @@ export const WalletDashboard = () => {
                 </div>
                 <div>
                   <p className="text-blue-100 text-sm">UPI Balance</p>
-                  <p className="font-semibold">₹8,420</p>
+                  <p className="font-semibold">{loading ? '₹••••' : `₹${balances.upiBalance.toLocaleString()}`}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -65,8 +109,8 @@ export const WalletDashboard = () => {
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-blue-100 text-sm">Card Limit</p>
-                  <p className="font-semibold">₹4,427 left</p>
+                  <p className="text-blue-100 text-sm">Card Balance</p>
+                  <p className="font-semibold">{loading ? '₹••••' : `₹${balances.cardBalance.toLocaleString()}`}</p>
                 </div>
               </div>
             </div>
@@ -98,20 +142,35 @@ export const WalletDashboard = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Button className="h-16 bg-blue-600 hover:bg-blue-700 flex-col space-y-1">
+        <Button 
+          className="h-16 bg-blue-600 hover:bg-blue-700 flex-col space-y-1"
+          onClick={onNavigateToPayment}
+        >
           <Zap className="w-5 h-5" />
           <span className="text-sm">Quick Pay</span>
         </Button>
-        <Button variant="outline" className="h-16 flex-col space-y-1">
-          <CreditCard className="w-5 h-5" />
+        <Button 
+          variant="outline" 
+          className="h-16 flex-col space-y-1"
+          onClick={onNavigateToSettings}
+        >
+          <Plus className="w-5 h-5" />
           <span className="text-sm">Add Card</span>
         </Button>
-        <Button variant="outline" className="h-16 flex-col space-y-1">
-          <TrendingUp className="w-5 h-5" />
+        <Button 
+          variant="outline" 
+          className="h-16 flex-col space-y-1"
+          onClick={onNavigateToAnalytics}
+        >
+          <BarChart3 className="w-5 h-5" />
           <span className="text-sm">Analytics</span>
         </Button>
-        <Button variant="outline" className="h-16 flex-col space-y-1">
-          <Star className="w-5 h-5" />
+        <Button 
+          variant="outline" 
+          className="h-16 flex-col space-y-1"
+          onClick={onNavigateToOffers}
+        >
+          <Gift className="w-5 h-5" />
           <span className="text-sm">Offers</span>
         </Button>
       </div>
