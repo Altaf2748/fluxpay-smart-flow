@@ -17,23 +17,40 @@ export const PaymentFlow = () => {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
+  const [showMpinDialog, setShowMpinDialog] = useState(false);
+  const [mpin, setMpin] = useState('');
+  const [mpinError, setMpinError] = useState('');
   const { toast } = useToast();
 
   const handleAmountChange = (value: string) => {
     setAmount(value);
-    if (parseFloat(value) > 0) {
+    const amt = parseFloat(value);
+    if (amt > 0 && amt <= 100000) {
       setShowRouting(true);
     } else {
       setShowRouting(false);
     }
   };
 
-  const routingRecommendation = {
-    recommended: 'UPI',
-    reason: '5% cashback + lower processing fee',
-    savings: '₹14 saved vs card',
-    points: '+14 bonus points'
+  const getRoutingRecommendation = () => {
+    const amt = parseFloat(amount);
+    if (amt <= 1000) {
+      return {
+        recommended: 'UPI',
+        reason: '5% cashback + zero processing fee',
+        savings: `₹${Math.round(amt * 0.03)} saved vs card`,
+        points: `+${Math.round(amt * 0.05)} bonus points`
+      };
+    } else {
+      return {
+        recommended: 'CARD',
+        reason: '2% cashback + purchase protection',
+        savings: 'Extended warranty included',
+        points: `+${Math.round(amt * 0.02)} points`
+      };
+    }
   };
+
 
   const paymentMethods = [
     {
@@ -54,9 +71,38 @@ export const PaymentFlow = () => {
     }
   ];
 
-  const handlePayment = async () => {
-    if (!selectedMethod || !amount || !merchant) return;
+  const handleInitiatePayment = () => {
+    if (!selectedMethod || !amount || !merchant) {
+      toast({
+        title: "Invalid Input",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    const amt = parseFloat(amount);
+    if (amt <= 0 || amt > 100000) {
+      toast({
+        title: "Invalid Amount",
+        description: "Amount must be between ₹1 and ₹100,000",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowMpinDialog(true);
+  };
+
+  const handleMpinSubmit = async () => {
+    // Validate MPIN (mock: accept any 4-6 digit)
+    if (!/^\d{4,6}$/.test(mpin)) {
+      setMpinError('MPIN must be 4-6 digits');
+      return;
+    }
+
+    setMpinError('');
+    setShowMpinDialog(false);
     setPaymentLoading(true);
 
     try {
@@ -106,6 +152,8 @@ export const PaymentFlow = () => {
     setShowRouting(false);
     setSelectedMethod('');
     setPaymentLoading(false);
+    setMpin('');
+    setMpinError('');
   };
 
   if (paymentComplete && paymentResult) {
@@ -135,18 +183,18 @@ export const PaymentFlow = () => {
                 : paymentResult.message
               }
             </p>
-            {paymentResult.success && (
+            {paymentResult.success && paymentResult.rewards && (
               <div className="bg-white rounded-lg p-4 mb-6">
                 <div className="flex justify-between text-sm mb-2">
                   <span>Cashback Earned</span>
                   <span className="font-semibold text-green-600">
-                    ₹{Math.round(parseFloat(amount) * (selectedMethod === 'UPI' ? 0.05 : 0.02))}
+                    ₹{paymentResult.rewards.cashback.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Reward Points</span>
                   <span className="font-semibold text-yellow-600">
-                    +{Math.round(parseFloat(amount) * (selectedMethod === 'UPI' ? 0.05 : 0.02))} pts
+                    +{paymentResult.rewards.points} pts
                   </span>
                 </div>
                 {paymentResult.transaction && (
@@ -206,20 +254,23 @@ export const PaymentFlow = () => {
           </div>
 
           {/* Routing Recommendation */}
-          {showRouting && (
-            <Alert className="border-blue-200 bg-blue-50">
-              <Zap className="h-4 w-4 text-blue-600" />
-              <AlertDescription>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-blue-800">We recommend UPI</p>
-                    <p className="text-sm text-blue-600">{routingRecommendation.reason}</p>
+          {showRouting && (() => {
+            const routing = getRoutingRecommendation();
+            return (
+              <Alert className="border-blue-200 bg-blue-50">
+                <Zap className="h-4 w-4 text-blue-600" />
+                <AlertDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-blue-800">We recommend {routing.recommended}</p>
+                      <p className="text-sm text-blue-600">{routing.reason}</p>
+                    </div>
+                    <Badge className="bg-blue-600">Best Deal</Badge>
                   </div>
-                  <Badge className="bg-blue-600">Best Deal</Badge>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
+                </AlertDescription>
+              </Alert>
+            );
+          })()}
 
           {/* Payment Methods */}
           {showRouting && (
@@ -266,7 +317,7 @@ export const PaymentFlow = () => {
           {/* Pay Button */}
           {selectedMethod && (
             <Button
-              onClick={handlePayment}
+              onClick={handleInitiatePayment}
               disabled={paymentLoading}
               className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
@@ -285,6 +336,53 @@ export const PaymentFlow = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* MPIN Dialog */}
+      {showMpinDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-80">
+            <CardHeader>
+              <CardTitle className="text-center">Enter MPIN</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600 text-center">
+                Enter your 4-6 digit MPIN to authorize payment
+              </p>
+              <Input
+                type="password"
+                maxLength={6}
+                value={mpin}
+                onChange={(e) => setMpin(e.target.value.replace(/\D/g, ''))}
+                placeholder="Enter MPIN"
+                className="text-center text-lg tracking-widest"
+              />
+              {mpinError && (
+                <p className="text-sm text-red-600 text-center">{mpinError}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowMpinDialog(false);
+                    setMpin('');
+                    setMpinError('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleMpinSubmit}
+                  disabled={mpin.length < 4}
+                >
+                  Confirm
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

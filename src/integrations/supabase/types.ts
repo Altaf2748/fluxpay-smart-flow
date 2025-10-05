@@ -7,10 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -110,6 +110,41 @@ export type Database = {
         }
         Relationships: []
       }
+      rewards_ledger: {
+        Row: {
+          cashback: number
+          created_at: string
+          id: string
+          points: number
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cashback?: number
+          created_at?: string
+          id?: string
+          points?: number
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cashback?: number
+          created_at?: string
+          id?: string
+          points?: number
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_ledger_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -117,6 +152,7 @@ export type Database = {
           id: string
           merchant: string
           rail: string
+          reward_amount: number | null
           status: string | null
           transaction_ref: string | null
           updated_at: string
@@ -128,6 +164,7 @@ export type Database = {
           id?: string
           merchant: string
           rail: string
+          reward_amount?: number | null
           status?: string | null
           transaction_ref?: string | null
           updated_at?: string
@@ -139,6 +176,7 @@ export type Database = {
           id?: string
           merchant?: string
           rail?: string
+          reward_amount?: number | null
           status?: string | null
           transaction_ref?: string | null
           updated_at?: string

@@ -43,6 +43,11 @@ serve(async (req) => {
     // Generate transaction reference
     const transactionRef = `UPI${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
+    // Calculate rewards for P2P (lower rate: 1%)
+    const rewardPercent = 0.01
+    const cashback = amount * rewardPercent
+    const points = Math.round(cashback)
+
     // Insert transaction record
     const { data: transaction, error: insertError } = await supabaseClient
       .from('transactions')
@@ -52,7 +57,8 @@ serve(async (req) => {
         amount: amount,
         rail: 'UPI_P2P',
         status: 'pending',
-        transaction_ref: transactionRef
+        transaction_ref: transactionRef,
+        reward_amount: 0 // Will be updated on success
       })
       .select()
       .single();
@@ -77,6 +83,7 @@ serve(async (req) => {
       .from('transactions')
       .update({ 
         status: finalStatus,
+        reward_amount: isSuccess ? cashback : 0,
         updated_at: new Date().toISOString()
       })
       .eq('id', transaction.id);
@@ -85,7 +92,23 @@ serve(async (req) => {
       console.error('Error updating transaction:', updateError);
     }
 
-    console.log(`P2P payment ${transactionRef}: ${finalStatus} - ₹${amount} to ${recipientName} (${recipientUpi})`);
+    // If payment successful, add rewards to ledger
+    if (isSuccess) {
+      const { error: rewardsError } = await supabaseClient
+        .from('rewards_ledger')
+        .insert({
+          user_id: user.id,
+          transaction_id: transaction.id,
+          cashback: cashback,
+          points: points
+        })
+
+      if (rewardsError) {
+        console.error('Rewards ledger error:', rewardsError);
+      }
+    }
+
+    console.log(`P2P payment ${transactionRef}: ${finalStatus} - ₹${amount} to ${recipientName} (${recipientUpi}) - Cashback: ₹${isSuccess ? cashback : 0}`);
 
     return new Response(
       JSON.stringify({
@@ -96,6 +119,7 @@ serve(async (req) => {
         amount,
         recipientName,
         recipientUpi,
+        rewards: isSuccess ? { cashback, points } : null,
         timestamp: new Date().toISOString()
       }),
       {

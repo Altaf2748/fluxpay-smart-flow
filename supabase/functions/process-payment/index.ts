@@ -48,6 +48,11 @@ serve(async (req) => {
       throw new Error('Invalid payment rail')
     }
 
+    // Calculate rewards (UPI: 5%, Card: 2%)
+    const rewardPercent = rail === 'UPI' ? 0.05 : 0.02
+    const cashback = paymentResult.success ? parseFloat(amount) * rewardPercent : 0
+    const points = Math.round(cashback)
+
     // Insert transaction record
     const { data: transaction, error } = await supabaseClient
       .from('transactions')
@@ -57,7 +62,8 @@ serve(async (req) => {
         amount: parseFloat(amount),
         rail,
         status: paymentResult.success ? 'success' : 'failed',
-        transaction_ref: transactionRef
+        transaction_ref: transactionRef,
+        reward_amount: cashback
       })
       .select()
       .single()
@@ -67,11 +73,31 @@ serve(async (req) => {
       throw error
     }
 
+    // If payment successful, add rewards to ledger
+    if (paymentResult.success && cashback > 0) {
+      const { error: rewardsError } = await supabaseClient
+        .from('rewards_ledger')
+        .insert({
+          user_id: user.id,
+          transaction_id: transaction.id,
+          cashback: cashback,
+          points: points
+        })
+
+      if (rewardsError) {
+        console.error('Rewards ledger error:', rewardsError)
+        // Don't fail the transaction if rewards fail
+      }
+    }
+
+    console.log(`Payment ${transactionRef}: ${paymentResult.success ? 'SUCCESS' : 'FAILED'} - ₹${amount} via ${rail} - Cashback: ₹${cashback}`)
+
     return new Response(
       JSON.stringify({
         success: paymentResult.success,
         transaction,
-        message: paymentResult.message
+        message: paymentResult.message,
+        rewards: paymentResult.success ? { cashback, points } : null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
