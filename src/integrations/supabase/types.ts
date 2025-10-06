@@ -115,33 +115,48 @@ export type Database = {
       }
       profiles: {
         Row: {
+          balance: number | null
           created_at: string
+          failed_mpin_attempts: number | null
           first_name: string | null
           id: string
           kyc_status: string | null
+          last_failed_attempt: string | null
           last_name: string | null
+          mpin_hash: string | null
+          mpin_locked_until: string | null
           phone: string | null
           tier_status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          balance?: number | null
           created_at?: string
+          failed_mpin_attempts?: number | null
           first_name?: string | null
           id?: string
           kyc_status?: string | null
+          last_failed_attempt?: string | null
           last_name?: string | null
+          mpin_hash?: string | null
+          mpin_locked_until?: string | null
           phone?: string | null
           tier_status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          balance?: number | null
           created_at?: string
+          failed_mpin_attempts?: number | null
           first_name?: string | null
           id?: string
           kyc_status?: string | null
+          last_failed_attempt?: string | null
           last_name?: string | null
+          mpin_hash?: string | null
+          mpin_locked_until?: string | null
           phone?: string | null
           tier_status?: string | null
           updated_at?: string
@@ -191,9 +206,11 @@ export type Database = {
           id: string
           merchant: string
           rail: string
+          recipient_id: string | null
           reward_amount: number | null
           status: string | null
           transaction_ref: string | null
+          transaction_type: string | null
           updated_at: string
           user_id: string
         }
@@ -203,9 +220,11 @@ export type Database = {
           id?: string
           merchant: string
           rail: string
+          recipient_id?: string | null
           reward_amount?: number | null
           status?: string | null
           transaction_ref?: string | null
+          transaction_type?: string | null
           updated_at?: string
           user_id: string
         }
@@ -215,9 +234,11 @@ export type Database = {
           id?: string
           merchant?: string
           rail?: string
+          recipient_id?: string | null
           reward_amount?: number | null
           status?: string | null
           transaction_ref?: string | null
+          transaction_type?: string | null
           updated_at?: string
           user_id?: string
         }

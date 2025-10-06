@@ -34,30 +34,26 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
     try {
       setLoading(true);
       
-      // Fetch user profile for name
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
-        }
-      }
+      if (!user) return;
 
-      // Fetch balances
-      const { data: response, error } = await supabase.functions.invoke('get-balances');
+      // Fetch user profile for name and balance
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, balance')
+        .eq('user_id', user.id)
+        .single();
       
       if (error) throw error;
-      
-      setBalances({
-        upiBalance: response.upiBalance,
-        cardBalance: response.cardBalance,
-        cardCreditLimit: response.cardCreditLimit
-      });
+
+      if (profile) {
+        setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
+        setBalances({
+          upiBalance: profile.balance || 0,
+          cardBalance: 0,
+          cardCreditLimit: 0
+        });
+      }
     } catch (error) {
       console.error('Error fetching balances:', error);
       toast({

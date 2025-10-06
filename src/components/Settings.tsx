@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { CreditCard, Smartphone, Plus, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MPINSetup } from './MPINSetup';
 
 export const Settings = () => {
   const [vpa, setVpa] = useState('');
@@ -96,9 +97,12 @@ export const Settings = () => {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Settings</h1>
-        <p className="text-gray-600">Link your UPI and card details for seamless payments</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <p className="text-gray-600">Manage your payment methods and security</p>
       </div>
+
+      {/* MPIN Setup */}
+      <MPINSetup />
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* UPI Linking */}
