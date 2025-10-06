@@ -37,8 +37,14 @@ serve(async (req) => {
 
     console.log(`Resolving identifier: ${identifier}`)
 
+    // Use service role key to bypass RLS for user search
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     // Search for user by phone number
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('user_id, first_name, last_name, phone')
       .eq('phone', identifier)

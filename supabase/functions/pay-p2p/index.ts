@@ -180,6 +180,39 @@ serve(async (req) => {
       })
     }
 
+    // Update sender's balance (deduct amount)
+    const { error: senderBalanceError } = await supabaseClient
+      .from('profiles')
+      .update({ 
+        balance: parseFloat(senderProfile.balance) - amount
+      })
+      .eq('user_id', user.id)
+
+    if (senderBalanceError) {
+      console.error('Sender balance update error:', senderBalanceError)
+    }
+
+    // Update recipient's balance (add amount) - use admin client to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const { data: recipientBalanceData, error: recipientBalanceError } = await supabaseAdmin
+      .from('profiles')
+      .select('balance')
+      .eq('user_id', recipientId)
+      .single()
+
+    if (!recipientBalanceError && recipientBalanceData) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          balance: parseFloat(recipientBalanceData.balance) + amount
+        })
+        .eq('user_id', recipientId)
+    }
+
     console.log(`P2P payment successful: ${user.id} -> ${recipientId}, amount: ${amount}`)
 
     return new Response(JSON.stringify({ 

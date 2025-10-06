@@ -196,20 +196,35 @@ serve(async (req) => {
       throw error
     }
 
-    // If payment successful, add rewards to ledger
-    if (paymentResult.success && cashback > 0) {
-      const { error: rewardsError } = await supabaseClient
-        .from('rewards_ledger')
-        .insert({
-          user_id: user.id,
-          transaction_id: transaction.id,
-          cashback: cashback,
-          points: points
+    // If payment successful, update user balance and add rewards
+    if (paymentResult.success) {
+      // Deduct amount from user's balance
+      const { error: balanceError } = await supabaseClient
+        .from('profiles')
+        .update({ 
+          balance: parseFloat(senderProfile.balance) - parseFloat(amount)
         })
+        .eq('user_id', user.id)
 
-      if (rewardsError) {
-        console.error('Rewards ledger error:', rewardsError)
-        // Don't fail the transaction if rewards fail
+      if (balanceError) {
+        console.error('Balance update error:', balanceError)
+      }
+
+      // Add rewards to ledger
+      if (cashback > 0) {
+        const { error: rewardsError } = await supabaseClient
+          .from('rewards_ledger')
+          .insert({
+            user_id: user.id,
+            transaction_id: transaction.id,
+            cashback: cashback,
+            points: points
+          })
+
+        if (rewardsError) {
+          console.error('Rewards ledger error:', rewardsError)
+          // Don't fail the transaction if rewards fail
+        }
       }
     }
 
