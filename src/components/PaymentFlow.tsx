@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MPINDialog } from './MPINDialog';
 
 export const PaymentFlow = () => {
   const [amount, setAmount] = useState('');
@@ -18,8 +19,6 @@ export const PaymentFlow = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
   const [showMpinDialog, setShowMpinDialog] = useState(false);
-  const [mpin, setMpin] = useState('');
-  const [mpinError, setMpinError] = useState('');
   const { toast } = useToast();
 
   const handleAmountChange = (value: string) => {
@@ -94,14 +93,7 @@ export const PaymentFlow = () => {
     setShowMpinDialog(true);
   };
 
-  const handleMpinSubmit = async () => {
-    // Validate MPIN (mock: accept any 4-6 digit)
-    if (!/^\d{4,6}$/.test(mpin)) {
-      setMpinError('MPIN must be 4-6 digits');
-      return;
-    }
-
-    setMpinError('');
+  const handleMpinConfirm = async (mpin: string) => {
     setShowMpinDialog(false);
     setPaymentLoading(true);
 
@@ -110,7 +102,8 @@ export const PaymentFlow = () => {
         body: {
           merchant,
           amount: parseFloat(amount),
-          rail: selectedMethod
+          rail: selectedMethod,
+          mpin
         }
       });
 
@@ -152,8 +145,6 @@ export const PaymentFlow = () => {
     setShowRouting(false);
     setSelectedMethod('');
     setPaymentLoading(false);
-    setMpin('');
-    setMpinError('');
   };
 
   if (paymentComplete && paymentResult) {
@@ -341,52 +332,12 @@ export const PaymentFlow = () => {
         </CardContent>
       </Card>
 
-      {/* MPIN Dialog */}
-      {showMpinDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-80">
-            <CardHeader>
-              <CardTitle className="text-center">Enter MPIN</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600 text-center">
-                Enter your 4-6 digit MPIN to authorize payment
-              </p>
-              <Input
-                type="password"
-                maxLength={6}
-                value={mpin}
-                onChange={(e) => setMpin(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter MPIN"
-                className="text-center text-lg tracking-widest"
-              />
-              {mpinError && (
-                <p className="text-sm text-red-600 text-center">{mpinError}</p>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setShowMpinDialog(false);
-                    setMpin('');
-                    setMpinError('');
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleMpinSubmit}
-                  disabled={mpin.length < 4}
-                >
-                  Confirm
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <MPINDialog
+        open={showMpinDialog}
+        onOpenChange={setShowMpinDialog}
+        onConfirm={handleMpinConfirm}
+        loading={paymentLoading}
+      />
     </div>
   );
 };

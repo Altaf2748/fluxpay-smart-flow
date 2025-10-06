@@ -7,7 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Lock } from "lucide-react";
 
-export const MPINSetup = () => {
+interface MPINSetupProps {
+  onMPINSet?: () => void;
+}
+
+export const MPINSetup = ({ onMPINSet }: MPINSetupProps) => {
   const [mpin, setMpin] = useState("");
   const [confirmMpin, setConfirmMpin] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,6 +66,10 @@ export const MPINSetup = () => {
 
       setMpin("");
       setConfirmMpin("");
+      
+      if (onMPINSet) {
+        onMPINSet();
+      }
     } catch (error: any) {
       toast({
         title: "Error",

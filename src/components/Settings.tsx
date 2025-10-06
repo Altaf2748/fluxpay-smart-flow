@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { CreditCard, Smartphone, Plus, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MPINSetup } from './MPINSetup';
+import { MPINReset } from './MPINReset';
 
 export const Settings = () => {
   const [vpa, setVpa] = useState('');
@@ -19,7 +19,65 @@ export const Settings = () => {
   const [cardLoading, setCardLoading] = useState(false);
   const [upiLinked, setUpiLinked] = useState(false);
   const [cardLinked, setCardLinked] = useState(false);
+  const [mpinSet, setMpinSet] = useState(false);
+  const [linkedUPI, setLinkedUPI] = useState<any>(null);
+  const [linkedCard, setLinkedCard] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    checkMPINStatus();
+    fetchLinkedAccounts();
+  }, []);
+
+  const checkMPINStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('mpin_hash')
+        .eq('user_id', user.id)
+        .single();
+
+      setMpinSet(!!profile?.mpin_hash);
+    } catch (error) {
+      console.error('Error checking MPIN status:', error);
+    }
+  };
+
+  const fetchLinkedAccounts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: upiData } = await supabase
+        .from('linked_banks')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      const { data: cardData } = await supabase
+        .from('linked_cards')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (upiData) {
+        setLinkedUPI(upiData);
+        setUpiLinked(true);
+      }
+      
+      if (cardData) {
+        setLinkedCard(cardData);
+        setCardLinked(true);
+      }
+    } catch (error) {
+      console.error('Error fetching linked accounts:', error);
+    }
+  };
 
   const handleLinkUPI = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +93,7 @@ export const Settings = () => {
       if (data.success) {
         setUpiLinked(true);
         setVpa('');
+        fetchLinkedAccounts();
         toast({
           title: "UPI Linked Successfully",
           description: "Your UPI VPA has been added to your account.",
@@ -76,6 +135,7 @@ export const Settings = () => {
         setExpiryMonth('');
         setExpiryYear('');
         setCvv('');
+        fetchLinkedAccounts();
         toast({
           title: "Card Linked Successfully",
           description: "Your card has been securely added to your account.",
@@ -101,8 +161,12 @@ export const Settings = () => {
         <p className="text-gray-600">Manage your payment methods and security</p>
       </div>
 
-      {/* MPIN Setup */}
-      <MPINSetup />
+      {/* MPIN Setup or Reset */}
+      {!mpinSet ? (
+        <MPINSetup onMPINSet={checkMPINStatus} />
+      ) : (
+        <MPINReset />
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* UPI Linking */}
@@ -114,10 +178,16 @@ export const Settings = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {upiLinked ? (
-              <div className="flex items-center justify-center py-8 text-green-600">
-                <Check className="w-8 h-8 mr-2" />
-                <span className="text-lg font-medium">UPI Linked Successfully!</span>
+            {upiLinked && linkedUPI ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center py-4 text-green-600">
+                  <Check className="w-6 h-6 mr-2" />
+                  <span className="font-medium">UPI Linked</span>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">VPA</p>
+                  <p className="font-medium">{linkedUPI.vpa}</p>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleLinkUPI} className="space-y-4">
@@ -163,10 +233,22 @@ export const Settings = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {cardLinked ? (
-              <div className="flex items-center justify-center py-8 text-green-600">
-                <Check className="w-8 h-8 mr-2" />
-                <span className="text-lg font-medium">Card Linked Successfully!</span>
+            {cardLinked && linkedCard ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center py-4 text-green-600">
+                  <Check className="w-6 h-6 mr-2" />
+                  <span className="font-medium">Card Linked</span>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div>
+                    <p className="text-sm text-gray-600">Card Number</p>
+                    <p className="font-medium">**** **** **** {linkedCard.card_last4}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Expiry</p>
+                    <p className="font-medium">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
+                  </div>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleLinkCard} className="space-y-4">
