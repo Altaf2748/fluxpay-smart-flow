@@ -74,6 +74,45 @@ export type Database = {
         }
         Relationships: []
       }
+      offers: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          mcc: string
+          reward_percent: number
+          terms: string | null
+          title: string
+          valid_from: string
+          valid_to: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          mcc: string
+          reward_percent?: number
+          terms?: string | null
+          title: string
+          valid_from?: string
+          valid_to: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          mcc?: string
+          reward_percent?: number
+          terms?: string | null
+          title?: string
+          valid_from?: string
+          valid_to?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

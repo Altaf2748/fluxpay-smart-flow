@@ -1,9 +1,10 @@
 
-import React from 'react';
-import { CreditCard, Home, Gift, Zap, LogOut, Settings, History, Users, BarChart3, Star } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { CreditCard, Home, Gift, Zap, LogOut, Settings, History, Users, BarChart3, Star, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavigationProps {
   activeTab: string;
@@ -12,6 +13,24 @@ interface NavigationProps {
 
 export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
   const { signOut, user } = useAuth();
+  const [userName, setUserName] = useState('User');
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
+        }
+      }
+    };
+    fetchUserName();
+  }, [user]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -39,6 +58,12 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               FluxPay
             </span>
+            {user && (
+              <div className="hidden md:flex items-center ml-4 space-x-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+                <User className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">{userName}</span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-4">

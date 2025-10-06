@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const PaymentFlow = () => {
   const [amount, setAmount] = useState('');
-  const [merchant, setMerchant] = useState('Starbucks Coffee');
+  const [merchant, setMerchant] = useState('');
   const [showRouting, setShowRouting] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('');
   const [paymentComplete, setPaymentComplete] = useState(false);
@@ -224,15 +224,19 @@ export const PaymentFlow = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Merchant Info */}
-          <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-            <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">S</span>
-            </div>
-            <div>
-              <p className="font-semibold">{merchant}</p>
-              <p className="text-sm text-gray-500">Coffee Shop</p>
-            </div>
+          {/* Merchant Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Merchant or Recipient
+            </label>
+            <Input
+              type="text"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              placeholder="Enter merchant name (e.g., Starbucks, Amazon)"
+              className="h-12"
+              disabled={paymentLoading}
+            />
           </div>
 
           {/* Amount Input */}

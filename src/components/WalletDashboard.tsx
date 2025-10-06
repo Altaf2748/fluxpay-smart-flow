@@ -21,6 +21,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   onNavigateToOffers 
 }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [userName, setUserName] = useState('User');
   const [balances, setBalances] = useState({ upiBalance: 0, cardBalance: 0, cardCreditLimit: 0 });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -32,6 +33,22 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   const fetchBalances = async () => {
     try {
       setLoading(true);
+      
+      // Fetch user profile for name
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
+        }
+      }
+
+      // Fetch balances
       const { data: response, error } = await supabase.functions.invoke('get-balances');
       
       if (error) throw error;
@@ -64,7 +81,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Priya!</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome, {userName}!</h1>
         <p className="text-gray-600">Here's your financial overview</p>
       </div>
 

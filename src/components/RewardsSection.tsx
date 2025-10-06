@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Star, TrendingUp, Gift } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { RedemptionDialog } from '@/components/RedemptionDialog';
 
 export const RewardsSection = () => {
   const [totalRewards, setTotalRewards] = useState({ cashback: 0, points: 0 });
   const [recentRewards, setRecentRewards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRedemption, setShowRedemption] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -81,10 +84,18 @@ export const RewardsSection = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">
+            <div className="text-4xl font-bold mb-3">
               {loading ? '•••••' : totalRewards.points.toLocaleString()}
             </div>
-            <p className="text-orange-100 mt-2">Available to redeem</p>
+            <p className="text-orange-100 mb-4">Available to redeem</p>
+            <Button 
+              onClick={() => setShowRedemption(true)}
+              disabled={loading || totalRewards.points < 100}
+              className="w-full bg-white text-orange-600 hover:bg-orange-50"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              Redeem Points
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -131,6 +142,14 @@ export const RewardsSection = () => {
           )}
         </CardContent>
       </Card>
+
+      {showRedemption && (
+        <RedemptionDialog
+          availablePoints={totalRewards.points}
+          onClose={() => setShowRedemption(false)}
+          onSuccess={fetchRewards}
+        />
+      )}
     </div>
   );
 };
