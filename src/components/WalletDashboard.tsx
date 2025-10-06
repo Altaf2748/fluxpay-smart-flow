@@ -28,6 +28,27 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
 
   useEffect(() => {
     fetchBalances();
+    
+    // Listen for balance update events from other components
+    const handleBalanceUpdate = () => {
+      fetchBalances();
+    };
+    
+    window.addEventListener('balance-updated', handleBalanceUpdate);
+    
+    // Refresh balances when component becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchBalances();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('balance-updated', handleBalanceUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchBalances = async () => {

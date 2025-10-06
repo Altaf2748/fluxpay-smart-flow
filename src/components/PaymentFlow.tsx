@@ -117,6 +117,8 @@ export const PaymentFlow = () => {
           title: "Payment Successful!",
           description: `₹${amount} paid to ${merchant}`,
         });
+        // Trigger a storage event to refresh balance across components
+        window.dispatchEvent(new Event('balance-updated'));
       } else {
         toast({
           title: "Payment Failed",

@@ -129,6 +129,8 @@ export const P2PPayment = () => {
           recipientName: resolvedContact?.name,
           transactionRef: data.transaction_ref
         });
+        // Trigger a storage event to refresh balance across components
+        window.dispatchEvent(new Event('balance-updated'));
       }
       
       setStep('result');

@@ -33,13 +33,18 @@ serve(async (req) => {
     const url = new URL(req.url);
     const month = url.searchParams.get('month') || new Date().toISOString().slice(0, 7);
 
+    // Calculate date range for the month
+    const startDate = `${month}-01`;
+    const [year, monthNum] = month.split('-').map(Number);
+    const nextMonth = monthNum === 12 ? `${year + 1}-01-01` : `${year}-${String(monthNum + 1).padStart(2, '0')}-01`;
+
     // Fetch transactions for the specified month
     const { data: transactions, error } = await supabaseClient
       .from('transactions')
       .select('*')
       .eq('user_id', user.id)
-      .gte('created_at', `${month}-01`)
-      .lt('created_at', `${month}-32`)
+      .gte('created_at', startDate)
+      .lt('created_at', nextMonth)
       .eq('status', 'success');
 
     if (error) {
