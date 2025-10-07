@@ -6,48 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const mockOffers = [
-  {
-    id: 1,
-    title: "10% Cashback on Groceries",
-    description: "Get 10% cashback on all grocery payments using UPI",
-    validUntil: "2024-12-31",
-    minAmount: 500,
-    maxCashback: 200,
-    category: "groceries",
-    rail: "UPI"
-  },
-  {
-    id: 2,
-    title: "No Fee Card Payments",
-    description: "Zero processing fee on card payments for this month",
-    validUntil: "2024-08-31",
-    minAmount: 100,
-    maxCashback: 0,
-    category: "general",
-    rail: "CARD"
-  },
-  {
-    id: 3,
-    title: "₹50 Cashback on P2P",
-    description: "Send money to friends and get ₹50 cashback",
-    validUntil: "2024-09-15",
-    minAmount: 1000,
-    maxCashback: 50,
-    category: "p2p",
-    rail: "UPI_P2P"
-  },
-  {
-    id: 4,
-    title: "Weekend Special",
-    description: "Double rewards on weekend transactions",
-    validUntil: "2024-08-25",
-    minAmount: 200,
-    maxCashback: 500,
-    category: "general",
-    rail: "ANY"
-  }
-];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -73,12 +31,35 @@ serve(async (req) => {
       })
     }
 
-    // Filter offers that are still valid
-    const activeOffers = mockOffers.filter(offer => 
-      new Date(offer.validUntil) > new Date()
-    );
+    // Fetch active offers from database
+    const { data: offers, error: offersError } = await supabaseClient
+      .from('offers')
+      .select('*')
+      .eq('active', true)
+      .gte('valid_to', new Date().toISOString())
+      .order('created_at', { ascending: false })
 
-    console.log(`Fetched ${activeOffers.length} active offers for user ${user.id}`);
+    if (offersError) {
+      console.error('Error fetching offers:', offersError)
+      return new Response(JSON.stringify({ error: 'Failed to fetch offers' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Transform database offers to match frontend format
+    const activeOffers = (offers || []).map(offer => ({
+      id: offer.id,
+      title: offer.title,
+      description: offer.description,
+      validUntil: offer.valid_to,
+      minAmount: 0,
+      maxCashback: Math.round(offer.reward_percent * 1000),
+      category: offer.mcc,
+      rail: 'UPI'
+    }))
+
+    console.log(`Fetched ${activeOffers.length} active offers for user ${user.id}`)
 
     return new Response(
       JSON.stringify({ offers: activeOffers }),

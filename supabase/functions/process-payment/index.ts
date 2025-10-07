@@ -202,7 +202,7 @@ serve(async (req) => {
       const { error: balanceError } = await supabaseClient
         .from('profiles')
         .update({ 
-          balance: parseFloat(senderProfile.balance) - parseFloat(amount)
+          balance: parseFloat(profile.balance) - parseFloat(amount)
         })
         .eq('user_id', user.id)
 

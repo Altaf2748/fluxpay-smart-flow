@@ -43,3 +43,6 @@ verify_jwt = true
 
 [functions.pay-p2p]
 verify_jwt = true
+
+[functions.rotate-offers]
+verify_jwt = false
