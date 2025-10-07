@@ -170,7 +170,7 @@ serve(async (req) => {
         recipient_id: recipientId,
         amount: amount,
         merchant: recipientName || 'User',
-        rail: 'P2P',
+        rail: 'UPI',
         transaction_type: 'p2p',
         transaction_ref: transactionRef,
         status: 'success'

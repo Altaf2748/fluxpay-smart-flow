@@ -241,38 +241,41 @@ export const PaymentFlow = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Merchant or Recipient
             </label>
-            <Input
-              type="text"
-              value={merchant}
-              onChange={(e) => {
-                setMerchant(e.target.value);
-                setSearchQuery(e.target.value);
-                setShowMerchantList(true);
-              }}
-              onFocus={() => setShowMerchantList(true)}
-              placeholder="Enter or select merchant (e.g., Starbucks, Amazon)"
-              className="h-12"
-              disabled={paymentLoading}
-            />
-            
-            {/* Merchant Dropdown */}
-            {showMerchantList && filteredMerchants.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredMerchants.slice(0, 10).map((merchantName) => (
-                  <div
+            <div className="space-y-2">
+              <Input
+                type="text"
+                value={merchant}
+                onChange={(e) => {
+                  setMerchant(e.target.value);
+                  setSearchQuery(e.target.value);
+                }}
+                placeholder="Search merchant (e.g., Starbucks, Amazon)"
+                className="h-12"
+                disabled={paymentLoading}
+              />
+              
+              {/* Always visible merchant grid */}
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
+                {filteredMerchants.slice(0, 20).map((merchantName) => (
+                  <button
                     key={merchantName}
+                    type="button"
                     onClick={() => {
                       setMerchant(merchantName);
-                      setShowMerchantList(false);
                       setSearchQuery('');
                     }}
-                    className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                    className={`px-3 py-2 text-sm rounded-md transition-all ${
+                      merchant === merchantName
+                        ? 'bg-blue-600 text-white font-medium'
+                        : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
+                    }`}
+                    disabled={paymentLoading}
                   >
-                    <p className="font-medium text-gray-800">{merchantName}</p>
-                  </div>
+                    {merchantName}
+                  </button>
                 ))}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Amount Input */}
