@@ -139,14 +139,20 @@ serve(async (req) => {
       })
     }
 
-    // Get recipient profile
-    const { data: recipientProfile, error: recipientError } = await supabaseClient
+    // Get recipient profile - use admin client to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const { data: recipientProfile, error: recipientError } = await supabaseAdmin
       .from('profiles')
       .select('user_id, first_name, last_name')
       .eq('user_id', recipientId)
       .single()
 
     if (recipientError || !recipientProfile) {
+      console.error('Recipient not found:', recipientError)
       return new Response(JSON.stringify({ error: 'Recipient not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -192,12 +198,7 @@ serve(async (req) => {
       console.error('Sender balance update error:', senderBalanceError)
     }
 
-    // Update recipient's balance (add amount) - use admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
+    // Update recipient's balance (add amount) - admin client already initialized above
     const { data: recipientBalanceData, error: recipientBalanceError } = await supabaseAdmin
       .from('profiles')
       .select('balance')

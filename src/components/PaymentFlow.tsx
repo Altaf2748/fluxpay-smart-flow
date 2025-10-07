@@ -10,6 +10,16 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MPINDialog } from './MPINDialog';
 
+const FAMOUS_MERCHANTS = [
+  'Starbucks', 'Amazon', 'Flipkart', 'Swiggy', 'Zomato', 'Netflix', 'Spotify', 'Apple', 
+  'Google Play', 'Steam', 'Nike', 'Adidas', 'Zara', 'H&M', 'McDonald\'s', 'KFC', 
+  'Domino\'s', 'Pizza Hut', 'Subway', 'Uber', 'Ola', 'BookMyShow', 'PVR Cinemas', 
+  'BigBasket', 'Grofers', 'DMart', 'Reliance Digital', 'Croma', 'Samsung', 'OnePlus',
+  'Xiaomi', 'Nykaa', 'Myntra', 'Ajio', 'Lifestyle', 'Pantaloons', 'Decathlon', 
+  'Titan', 'Tanishq', 'Kalyan Jewellers', 'HP', 'Dell', 'Lenovo', 'Asus', 'Acer',
+  'Sony', 'LG', 'Philips', 'Boat', 'JBL', 'Bose'
+];
+
 export const PaymentFlow = () => {
   const [amount, setAmount] = useState('');
   const [merchant, setMerchant] = useState('');
@@ -19,6 +29,8 @@ export const PaymentFlow = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
   const [showMpinDialog, setShowMpinDialog] = useState(false);
+  const [showMerchantList, setShowMerchantList] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
   const handleAmountChange = (value: string) => {
@@ -144,10 +156,17 @@ export const PaymentFlow = () => {
     setPaymentComplete(false);
     setPaymentResult(null);
     setAmount('');
+    setMerchant('');
     setShowRouting(false);
     setSelectedMethod('');
     setPaymentLoading(false);
+    setShowMerchantList(false);
+    setSearchQuery('');
   };
+
+  const filteredMerchants = FAMOUS_MERCHANTS.filter(m => 
+    m.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (paymentComplete && paymentResult) {
     return (
@@ -218,18 +237,42 @@ export const PaymentFlow = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Merchant Input */}
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Merchant or Recipient
             </label>
             <Input
               type="text"
               value={merchant}
-              onChange={(e) => setMerchant(e.target.value)}
-              placeholder="Enter merchant name (e.g., Starbucks, Amazon)"
+              onChange={(e) => {
+                setMerchant(e.target.value);
+                setSearchQuery(e.target.value);
+                setShowMerchantList(true);
+              }}
+              onFocus={() => setShowMerchantList(true)}
+              placeholder="Enter or select merchant (e.g., Starbucks, Amazon)"
               className="h-12"
               disabled={paymentLoading}
             />
+            
+            {/* Merchant Dropdown */}
+            {showMerchantList && filteredMerchants.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {filteredMerchants.slice(0, 10).map((merchantName) => (
+                  <div
+                    key={merchantName}
+                    onClick={() => {
+                      setMerchant(merchantName);
+                      setShowMerchantList(false);
+                      setSearchQuery('');
+                    }}
+                    className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                  >
+                    <p className="font-medium text-gray-800">{merchantName}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Amount Input */}
