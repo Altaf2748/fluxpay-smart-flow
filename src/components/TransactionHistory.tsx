@@ -14,6 +14,9 @@ interface Transaction {
   status: string;
   transaction_ref: string;
   created_at: string;
+  user_id: string;
+  recipient_id: string | null;
+  transaction_type: string;
 }
 
 export const TransactionHistory = () => {
@@ -37,6 +40,10 @@ export const TransactionHistory = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const isReceivedTransaction = (txn: Transaction) => {
+    return txn.recipient_id === user?.id && txn.transaction_type === 'p2p';
   };
 
   useEffect(() => {
@@ -131,11 +138,19 @@ export const TransactionHistory = () => {
                       }
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{txn.merchant}</h3>
+                      <h3 className="font-semibold text-gray-900">
+                        {isReceivedTransaction(txn) ? `From ${txn.merchant}` : txn.merchant}
+                      </h3>
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
                         <span>{new Date(txn.created_at).toLocaleDateString()}</span>
                         <span>•</span>
                         <span>{txn.rail}</span>
+                        {isReceivedTransaction(txn) && (
+                          <>
+                            <span>•</span>
+                            <Badge variant="secondary" className="text-xs">Received</Badge>
+                          </>
+                        )}
                         <span>•</span>
                         <span>{txn.transaction_ref}</span>
                       </div>
@@ -143,8 +158,10 @@ export const TransactionHistory = () => {
                   </div>
                   <div className="text-right">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-lg font-semibold text-gray-900">
-                        ₹{txn.amount.toFixed(2)}
+                      <span className={`text-lg font-semibold ${
+                        isReceivedTransaction(txn) ? 'text-green-600' : 'text-gray-900'
+                      }`}>
+                        {isReceivedTransaction(txn) ? '+' : ''}₹{txn.amount.toFixed(2)}
                       </span>
                       {getStatusIcon(txn.status)}
                     </div>

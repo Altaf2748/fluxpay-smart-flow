@@ -24,14 +24,18 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   const [userName, setUserName] = useState('User');
   const [balances, setBalances] = useState({ upiBalance: 0, cardBalance: 0, cardCreditLimit: 0 });
   const [loading, setLoading] = useState(true);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchBalances();
+    fetchRecentTransactions();
     
     // Listen for balance update events from other components
     const handleBalanceUpdate = () => {
       fetchBalances();
+      fetchRecentTransactions();
     };
     
     window.addEventListener('balance-updated', handleBalanceUpdate);
@@ -40,6 +44,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchBalances();
+        fetchRecentTransactions();
       }
     };
     
@@ -57,6 +62,8 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setCurrentUserId(user.id);
 
       // Fetch user profile for name and balance
       const { data: profile, error } = await supabase
@@ -86,13 +93,50 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       setLoading(false);
     }
   };
-  
-  const recentTransactions = [
-    { id: 1, merchant: 'Starbucks Coffee', amount: -285, type: 'UPI', reward: 14, time: '2 min ago' },
-    { id: 2, merchant: 'Amazon Purchase', amount: -1250, type: 'Card', reward: 62, time: '1 hour ago' },
-    { id: 3, merchant: 'Salary Credit', amount: 45000, type: 'Bank', reward: 0, time: '2 days ago' },
-    { id: 4, merchant: 'Uber Ride', amount: -180, type: 'UPI', reward: 9, time: '1 day ago' },
-  ];
+
+  const fetchRecentTransactions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+
+      const formattedTransactions = (data || []).map(txn => {
+        const isReceived = txn.recipient_id === user.id && txn.transaction_type === 'p2p';
+        return {
+          id: txn.id,
+          merchant: isReceived ? `From ${txn.merchant}` : txn.merchant,
+          amount: isReceived ? txn.amount : -txn.amount,
+          type: txn.rail,
+          reward: txn.reward_amount || 0,
+          time: getTimeAgo(txn.created_at)
+        };
+      });
+
+      setRecentTransactions(formattedTransactions);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
