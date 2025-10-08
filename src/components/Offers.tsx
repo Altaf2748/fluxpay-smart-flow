@@ -2,9 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Gift, Calendar, CreditCard, Smartphone, Users, Star } from 'lucide-react';
+import { Gift, Calendar, CreditCard, Smartphone, Users, Star, Copy, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Offer {
   id: number;
@@ -15,11 +22,14 @@ interface Offer {
   maxCashback: number;
   category: string;
   rail: string;
+  redeemCode: string;
 }
 
 export const Offers = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,6 +96,23 @@ export const Offers = () => {
     const diffTime = expiryDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays <= 7;
+  };
+
+  const handleActivateOffer = (offer: Offer) => {
+    setSelectedOffer(offer);
+    setCopied(false);
+  };
+
+  const handleCopyCode = async () => {
+    if (selectedOffer?.redeemCode) {
+      await navigator.clipboard.writeText(selectedOffer.redeemCode);
+      setCopied(true);
+      toast({
+        title: "Code Copied!",
+        description: "Use this code when making a payment",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   if (loading) {
@@ -166,7 +193,11 @@ export const Offers = () => {
                   </div>
                 </div>
                 
-                <Button className="w-full" size="sm">
+                <Button 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => handleActivateOffer(offer)}
+                >
                   Activate Offer
                 </Button>
               </CardContent>
@@ -174,6 +205,62 @@ export const Offers = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-primary" />
+              {selectedOffer?.title}
+            </DialogTitle>
+            <DialogDescription>
+              Use this code when making a payment to {selectedOffer?.category}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <p className="text-sm text-muted-foreground">Coupon Code</p>
+              <div className="flex items-center justify-between gap-2">
+                <code className="text-2xl font-bold tracking-wider">
+                  {selectedOffer?.redeemCode}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyCode}
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Max Cashback:</span>
+                <span className="font-semibold text-green-600">
+                  ₹{selectedOffer?.maxCashback}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Valid Until:</span>
+                <span className="font-semibold">
+                  {selectedOffer && formatDate(selectedOffer.validUntil)}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              This code is unique to this offer. Apply it during payment to receive the cashback.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

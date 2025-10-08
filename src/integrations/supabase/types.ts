@@ -81,6 +81,7 @@ export type Database = {
           description: string | null
           id: string
           mcc: string
+          redeem_code: string | null
           reward_percent: number
           terms: string | null
           title: string
@@ -93,6 +94,7 @@ export type Database = {
           description?: string | null
           id?: string
           mcc: string
+          redeem_code?: string | null
           reward_percent?: number
           terms?: string | null
           title: string
@@ -105,6 +107,7 @@ export type Database = {
           description?: string | null
           id?: string
           mcc?: string
+          redeem_code?: string | null
           reward_percent?: number
           terms?: string | null
           title?: string
