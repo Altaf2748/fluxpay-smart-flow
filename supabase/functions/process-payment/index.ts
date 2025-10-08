@@ -177,11 +177,11 @@ serve(async (req) => {
     let appliedOffer = null
 
     // Validate and apply coupon code if provided
-    if (couponCode) {
+    if (couponCode && couponCode.trim() !== '') {
       const { data: offer, error: offerError } = await supabaseClient
         .from('offers')
         .select('*')
-        .eq('redeem_code', couponCode)
+        .eq('redeem_code', couponCode.trim())
         .eq('active', true)
         .gte('valid_to', new Date().toISOString())
         .single()

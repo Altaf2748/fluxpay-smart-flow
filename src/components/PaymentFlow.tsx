@@ -117,7 +117,7 @@ export const PaymentFlow = () => {
           amount: parseFloat(amount),
           rail: selectedMethod,
           mpin,
-          couponCode: couponCode || null
+          couponCode: couponCode?.trim() || null
         }
       });
 
