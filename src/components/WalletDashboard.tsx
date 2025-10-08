@@ -107,17 +107,37 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
 
       if (error) throw error;
 
-      const formattedTransactions = (data || []).map(txn => {
-        const isReceived = txn.recipient_id === user.id && txn.transaction_type === 'p2p';
-        return {
-          id: txn.id,
-          merchant: isReceived ? `From ${txn.merchant}` : txn.merchant,
-          amount: isReceived ? txn.amount : -txn.amount,
-          type: txn.rail,
-          reward: txn.reward_amount || 0,
-          time: getTimeAgo(txn.created_at)
-        };
-      });
+      // Fetch sender names for received P2P transactions
+      const formattedTransactions = await Promise.all(
+        (data || []).map(async (txn) => {
+          const isReceived = txn.recipient_id === user.id && txn.transaction_type === 'p2p';
+          let merchantName = txn.merchant;
+
+          if (isReceived) {
+            const { data: senderProfile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('user_id', txn.user_id)
+              .single();
+            
+            if (senderProfile) {
+              const senderName = `${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim();
+              merchantName = `From ${senderName || txn.merchant}`;
+            } else {
+              merchantName = `From ${txn.merchant}`;
+            }
+          }
+
+          return {
+            id: txn.id,
+            merchant: merchantName,
+            amount: isReceived ? txn.amount : -txn.amount,
+            type: txn.rail,
+            reward: txn.reward_amount || 0,
+            time: getTimeAgo(txn.created_at)
+          };
+        })
+      );
 
       setRecentTransactions(formattedTransactions);
     } catch (error) {

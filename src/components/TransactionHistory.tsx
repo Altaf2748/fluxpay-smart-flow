@@ -34,7 +34,27 @@ export const TransactionHistory = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTransactions(data || []);
+
+      // Fetch sender names for received P2P transactions
+      const transactionsWithNames = await Promise.all(
+        (data || []).map(async (txn) => {
+          if (txn.recipient_id === user.id && txn.transaction_type === 'p2p') {
+            const { data: senderProfile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('user_id', txn.user_id)
+              .single();
+            
+            if (senderProfile) {
+              const senderName = `${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim();
+              return { ...txn, merchant: senderName || txn.merchant };
+            }
+          }
+          return txn;
+        })
+      );
+
+      setTransactions(transactionsWithNames);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     } finally {
