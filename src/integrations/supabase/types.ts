@@ -116,6 +116,7 @@ export type Database = {
       profiles: {
         Row: {
           balance: number | null
+          card_balance: number | null
           created_at: string
           failed_mpin_attempts: number | null
           first_name: string | null
@@ -132,6 +133,7 @@ export type Database = {
         }
         Insert: {
           balance?: number | null
+          card_balance?: number | null
           created_at?: string
           failed_mpin_attempts?: number | null
           first_name?: string | null
@@ -148,6 +150,7 @@ export type Database = {
         }
         Update: {
           balance?: number | null
+          card_balance?: number | null
           created_at?: string
           failed_mpin_attempts?: number | null
           first_name?: string | null

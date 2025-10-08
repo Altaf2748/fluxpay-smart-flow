@@ -68,7 +68,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       // Fetch user profile for name and balance
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('first_name, last_name, balance')
+        .select('first_name, last_name, balance, card_balance')
         .eq('user_id', user.id)
         .single();
       
@@ -78,7 +78,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
         setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
         setBalances({
           upiBalance: profile.balance || 0,
-          cardBalance: 0,
+          cardBalance: profile.card_balance || 0,
           cardCreditLimit: 0
         });
       }
