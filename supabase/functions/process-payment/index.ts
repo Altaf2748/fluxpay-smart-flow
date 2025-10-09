@@ -32,7 +32,7 @@ serve(async (req) => {
       })
     }
 
-    const { merchant, amount, rail, mpin, couponCode } = await req.json()
+    const { merchant, amount, rail, mpin } = await req.json()
 
     if (!mpin) {
       return new Response(JSON.stringify({ 
@@ -172,40 +172,7 @@ serve(async (req) => {
     }
 
     // Calculate rewards (UPI: 5%, Card: 2%)
-    let rewardPercent = rail === 'UPI' ? 0.05 : 0.02
-    let couponApplied = false
-    let appliedOffer = null
-
-    // Validate and apply coupon code if provided
-    if (couponCode && couponCode.trim() !== '') {
-      const { data: offer, error: offerError } = await supabaseClient
-        .from('offers')
-        .select('*')
-        .eq('redeem_code', couponCode.trim())
-        .eq('active', true)
-        .gte('valid_to', new Date().toISOString())
-        .single()
-
-      if (offerError || !offer) {
-        return new Response(JSON.stringify({ 
-          success: false,
-          error: 'Invalid coupon code',
-          message: 'The coupon code you entered is invalid or expired'
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      // Check if merchant matches the offer's MCC category
-      // For simplicity, we'll accept the coupon for now
-      // In production, you'd match merchant to MCC codes
-      rewardPercent = offer.reward_percent
-      couponApplied = true
-      appliedOffer = offer
-      console.log(`Coupon ${couponCode} applied: ${offer.reward_percent * 100}% cashback`)
-    }
-
+    const rewardPercent = rail === 'UPI' ? 0.05 : 0.02
     const cashback = paymentResult.success ? parseFloat(amount) * rewardPercent : 0
     const points = Math.round(cashback)
 
@@ -268,12 +235,7 @@ serve(async (req) => {
         success: paymentResult.success,
         transaction,
         message: paymentResult.message,
-        rewards: paymentResult.success ? { 
-          cashback, 
-          points,
-          couponApplied,
-          offerTitle: appliedOffer?.title
-        } : null
+        rewards: paymentResult.success ? { cashback, points } : null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

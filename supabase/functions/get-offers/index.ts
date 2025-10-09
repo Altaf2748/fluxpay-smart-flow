@@ -56,8 +56,7 @@ serve(async (req) => {
       minAmount: 0,
       maxCashback: Math.round(offer.reward_percent * 1000),
       category: offer.mcc,
-      rail: 'UPI',
-      redeemCode: offer.redeem_code
+      rail: 'UPI'
     }))
 
     console.log(`Fetched ${activeOffers.length} active offers for user ${user.id}`)

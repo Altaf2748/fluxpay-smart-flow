@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowRight, Smartphone, CreditCard, Zap, AlertCircle, CheckCircle, Gift } from 'lucide-react';
+import { ArrowRight, Smartphone, CreditCard, Zap, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,6 @@ const FAMOUS_MERCHANTS = [
 export const PaymentFlow = () => {
   const [amount, setAmount] = useState('');
   const [merchant, setMerchant] = useState('');
-  const [couponCode, setCouponCode] = useState('');
   const [showRouting, setShowRouting] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState('');
   const [paymentComplete, setPaymentComplete] = useState(false);
@@ -116,8 +115,7 @@ export const PaymentFlow = () => {
           merchant,
           amount: parseFloat(amount),
           rail: selectedMethod,
-          mpin,
-          couponCode: couponCode?.trim() || null
+          mpin
         }
       });
 
@@ -159,7 +157,6 @@ export const PaymentFlow = () => {
     setPaymentResult(null);
     setAmount('');
     setMerchant('');
-    setCouponCode('');
     setShowRouting(false);
     setSelectedMethod('');
     setPaymentLoading(false);
@@ -200,17 +197,6 @@ export const PaymentFlow = () => {
             </p>
             {paymentResult.success && paymentResult.rewards && (
               <div className="bg-white rounded-lg p-4 mb-6">
-                {paymentResult.rewards.couponApplied && (
-                  <div className="flex items-center justify-between text-sm mb-3 pb-3 border-b">
-                    <span className="flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-green-600" />
-                      Coupon Applied
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      {paymentResult.rewards.offerTitle}
-                    </span>
-                  </div>
-                )}
                 <div className="flex justify-between text-sm mb-2">
                   <span>Cashback Earned</span>
                   <span className="font-semibold text-green-600">
@@ -308,24 +294,6 @@ export const PaymentFlow = () => {
                 disabled={paymentLoading}
               />
             </div>
-          </div>
-
-          {/* Coupon Code Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Coupon Code (Optional)
-            </label>
-            <Input
-              type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              placeholder="Enter coupon code"
-              className="h-12 uppercase"
-              disabled={paymentLoading}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Apply a coupon code from offers to get additional cashback
-            </p>
           </div>
 
           {/* Routing Recommendation */}
