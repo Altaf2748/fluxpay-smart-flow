@@ -157,9 +157,9 @@ export const PaymentFlow = () => {
       return { original: originalAmount, discount: 0, final: originalAmount };
     }
     
-    const discountPercent = Number(appliedOffer.reward_percent);
-    const discountAmount = originalAmount * discountPercent;
-    const finalAmount = originalAmount - discountAmount;
+    // Generate random discount between 20-45 rupees
+    const discountAmount = Math.floor(Math.random() * (45 - 20 + 1)) + 20;
+    const finalAmount = Math.max(0, originalAmount - discountAmount);
     
     return {
       original: originalAmount,
@@ -403,7 +403,7 @@ export const PaymentFlow = () => {
                 <div className="flex items-center gap-2 text-sm text-green-600">
                   <Gift className="w-4 h-4" />
                   <span className="font-medium">
-                    {Math.round(appliedOffer.reward_percent * 100)}% Discount Auto-Applied
+                    Discount Auto-Applied
                   </span>
                   <Badge variant="secondary" className="bg-green-100 text-green-700">
                     {appliedOffer.title}
@@ -419,7 +419,7 @@ export const PaymentFlow = () => {
                           <span className="font-medium text-gray-900">₹{original.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-green-600">Discount ({Math.round(appliedOffer.reward_percent * 100)}%):</span>
+                          <span className="text-green-600">Discount Applied:</span>
                           <span className="font-semibold text-green-600">-₹{discount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-base pt-2 border-t border-green-300">
