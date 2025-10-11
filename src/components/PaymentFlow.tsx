@@ -145,12 +145,19 @@ export const PaymentFlow = () => {
   };
 
   const calculateDiscountedAmount = () => {
-    const originalAmount = parseFloat(amount) || 0;
-    if (!appliedOffer || originalAmount === 0) {
+    const originalAmount = parseFloat(amount);
+    
+    // Return zeros if amount is invalid or not entered
+    if (isNaN(originalAmount) || originalAmount <= 0) {
+      return { original: 0, discount: 0, final: 0 };
+    }
+    
+    // If no offer applied, return original amount
+    if (!appliedOffer || !appliedOffer.reward_percent) {
       return { original: originalAmount, discount: 0, final: originalAmount };
     }
     
-    const discountPercent = appliedOffer.reward_percent;
+    const discountPercent = Number(appliedOffer.reward_percent);
     const discountAmount = originalAmount * discountPercent;
     const finalAmount = originalAmount - discountAmount;
     
@@ -166,6 +173,17 @@ export const PaymentFlow = () => {
     setPaymentLoading(true);
 
     const { final: finalAmount } = calculateDiscountedAmount();
+    
+    // Validate amount before proceeding
+    if (!finalAmount || finalAmount <= 0 || isNaN(finalAmount)) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid payment amount",
+        variant: "destructive",
+      });
+      setPaymentLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('process-payment', {
@@ -391,24 +409,27 @@ export const PaymentFlow = () => {
                     {appliedOffer.title}
                   </Badge>
                 </div>
-                {amount && parseFloat(amount) > 0 && (() => {
+                {amount && parseFloat(amount) > 0 && !isNaN(parseFloat(amount)) && (() => {
                   const { original, discount, final } = calculateDiscountedAmount();
-                  return (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Original Amount:</span>
-                        <span className="font-medium text-gray-900">₹{original.toFixed(2)}</span>
+                  if (original > 0 && !isNaN(discount) && !isNaN(final)) {
+                    return (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Original Amount:</span>
+                          <span className="font-medium text-gray-900">₹{original.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-green-600">Discount ({Math.round(appliedOffer.reward_percent * 100)}%):</span>
+                          <span className="font-semibold text-green-600">-₹{discount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-base pt-2 border-t border-green-300">
+                          <span className="font-semibold text-gray-900">Amount to Pay:</span>
+                          <span className="font-bold text-green-700">₹{final.toFixed(2)}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-600">Discount ({Math.round(appliedOffer.reward_percent * 100)}%):</span>
-                        <span className="font-semibold text-green-600">-₹{discount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-base pt-2 border-t border-green-300">
-                        <span className="font-semibold text-gray-900">Amount to Pay:</span>
-                        <span className="font-bold text-green-700">₹{final.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  );
+                    );
+                  }
+                  return null;
                 })()}
               </div>
             ) : (
@@ -493,7 +514,12 @@ export const PaymentFlow = () => {
                 </>
               ) : (
                 <>
-                  Pay ₹{calculateDiscountedAmount().final.toFixed(2)} with {paymentMethods.find(m => m.id === selectedMethod)?.name}
+                  {(() => {
+                    const { final } = calculateDiscountedAmount();
+                    return final > 0 && !isNaN(final) 
+                      ? `Pay ₹${final.toFixed(2)} with ${paymentMethods.find(m => m.id === selectedMethod)?.name}`
+                      : `Pay with ${paymentMethods.find(m => m.id === selectedMethod)?.name}`;
+                  })()}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </>
               )}
