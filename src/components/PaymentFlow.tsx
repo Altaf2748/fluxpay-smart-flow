@@ -152,8 +152,8 @@ export const PaymentFlow = () => {
       return { original: 0, discount: 0, final: 0, discountPercent: 0 };
     }
     
-    // If no offer applied, return original amount
-    if (!appliedOffer || !appliedOffer.reward_percent) {
+    // If no offer applied, return original amount with no discount
+    if (!appliedOffer) {
       return { original: originalAmount, discount: 0, final: originalAmount, discountPercent: 0 };
     }
     
