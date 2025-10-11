@@ -144,15 +144,34 @@ export const PaymentFlow = () => {
     setShowMpinDialog(true);
   };
 
+  const calculateDiscountedAmount = () => {
+    const originalAmount = parseFloat(amount) || 0;
+    if (!appliedOffer || originalAmount === 0) {
+      return { original: originalAmount, discount: 0, final: originalAmount };
+    }
+    
+    const discountPercent = appliedOffer.reward_percent;
+    const discountAmount = originalAmount * discountPercent;
+    const finalAmount = originalAmount - discountAmount;
+    
+    return {
+      original: originalAmount,
+      discount: discountAmount,
+      final: finalAmount
+    };
+  };
+
   const handleMpinConfirm = async (mpin: string) => {
     setShowMpinDialog(false);
     setPaymentLoading(true);
+
+    const { final: finalAmount } = calculateDiscountedAmount();
 
     try {
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
           merchant,
-          amount: parseFloat(amount),
+          amount: finalAmount,
           rail: selectedMethod,
           mpin,
           couponCode: couponCode?.trim() || null
@@ -167,7 +186,7 @@ export const PaymentFlow = () => {
       if (data.success) {
         toast({
           title: "Payment Successful!",
-          description: `₹${amount} paid to ${merchant}`,
+          description: `₹${finalAmount.toFixed(2)} paid to ${merchant}`,
         });
         // Trigger a storage event to refresh balance across components
         window.dispatchEvent(new Event('balance-updated'));
@@ -362,18 +381,39 @@ export const PaymentFlow = () => {
               disabled={paymentLoading}
             />
             {appliedOffer ? (
-              <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
-                <Gift className="w-4 h-4" />
-                <span className="font-medium">
-                  {Math.round(appliedOffer.reward_percent * 100)}% Cashback Auto-Applied
-                </span>
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
-                  {appliedOffer.title}
-                </Badge>
+              <div className="space-y-2 mt-3">
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <Gift className="w-4 h-4" />
+                  <span className="font-medium">
+                    {Math.round(appliedOffer.reward_percent * 100)}% Discount Auto-Applied
+                  </span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    {appliedOffer.title}
+                  </Badge>
+                </div>
+                {amount && parseFloat(amount) > 0 && (() => {
+                  const { original, discount, final } = calculateDiscountedAmount();
+                  return (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Original Amount:</span>
+                        <span className="font-medium text-gray-900">₹{original.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-600">Discount ({Math.round(appliedOffer.reward_percent * 100)}%):</span>
+                        <span className="font-semibold text-green-600">-₹{discount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-base pt-2 border-t border-green-300">
+                        <span className="font-semibold text-gray-900">Amount to Pay:</span>
+                        <span className="font-bold text-green-700">₹{final.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <p className="text-xs text-gray-500 mt-1">
-                Apply a coupon code from offers to get additional cashback
+                Apply a coupon code from offers to get additional discount
               </p>
             )}
           </div>
@@ -453,7 +493,7 @@ export const PaymentFlow = () => {
                 </>
               ) : (
                 <>
-                  Pay ₹{amount} with {paymentMethods.find(m => m.id === selectedMethod)?.name}
+                  Pay ₹{calculateDiscountedAmount().final.toFixed(2)} with {paymentMethods.find(m => m.id === selectedMethod)?.name}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </>
               )}
