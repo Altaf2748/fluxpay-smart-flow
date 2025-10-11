@@ -34,6 +34,7 @@ export const PaymentFlow = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [availableOffers, setAvailableOffers] = useState<any[]>([]);
   const [appliedOffer, setAppliedOffer] = useState<any>(null);
+  const [paidAmount, setPaidAmount] = useState<number>(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -179,6 +180,9 @@ export const PaymentFlow = () => {
 
     const { final: finalAmount } = calculateDiscountedAmount();
     
+    // Store the final paid amount for display
+    setPaidAmount(finalAmount);
+    
     // Validate amount before proceeding
     if (!finalAmount || finalAmount <= 0 || isNaN(finalAmount)) {
       toast({
@@ -245,6 +249,7 @@ export const PaymentFlow = () => {
     setPaymentLoading(false);
     setShowMerchantList(false);
     setSearchQuery('');
+    setPaidAmount(0);
   };
 
   const filteredMerchants = FAMOUS_MERCHANTS.filter(m => 
@@ -274,7 +279,7 @@ export const PaymentFlow = () => {
               paymentResult.success ? 'text-green-600' : 'text-red-600'
             }`}>
               {paymentResult.success 
-                ? `₹${amount} paid to ${merchant}` 
+                ? `₹${paidAmount.toFixed(2)} paid to ${merchant}` 
                 : paymentResult.message
               }
             </p>
