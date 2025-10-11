@@ -125,6 +125,13 @@ serve(async (req) => {
     const now = new Date()
     const validUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
+    // Generate coupon codes based on merchant name and reward percent
+    const generateCouponCode = (title: string, rewardPercent: number) => {
+      const merchantName = title.split(' ')[0].toUpperCase()
+      const percent = Math.round(rewardPercent * 100)
+      return `${merchantName}${percent}`
+    }
+
     const offersToInsert = selectedOffers.map(offer => ({
       title: offer.title,
       description: offer.description,
@@ -133,7 +140,8 @@ serve(async (req) => {
       terms: offer.terms,
       valid_from: now.toISOString(),
       valid_to: validUntil.toISOString(),
-      active: true
+      active: true,
+      redeem_code: generateCouponCode(offer.title, offer.reward_percent)
     }))
 
     const { data: newOffers, error: insertError } = await supabaseAdmin

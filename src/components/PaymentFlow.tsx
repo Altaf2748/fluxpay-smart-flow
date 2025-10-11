@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Smartphone, CreditCard, Zap, AlertCircle, CheckCircle, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,45 @@ export const PaymentFlow = () => {
   const [showMpinDialog, setShowMpinDialog] = useState(false);
   const [showMerchantList, setShowMerchantList] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [availableOffers, setAvailableOffers] = useState<any[]>([]);
+  const [appliedOffer, setAppliedOffer] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchOffers();
+  }, []);
+
+  useEffect(() => {
+    // Auto-apply coupon when merchant is selected
+    if (merchant && availableOffers.length > 0) {
+      const matchingOffer = availableOffers.find(offer => {
+        const merchantName = merchant.toLowerCase();
+        const offerMerchant = offer.title.split(' ')[0].toLowerCase();
+        return merchantName.includes(offerMerchant) || offerMerchant.includes(merchantName);
+      });
+
+      if (matchingOffer) {
+        setCouponCode(matchingOffer.redeem_code);
+        setAppliedOffer(matchingOffer);
+      } else {
+        setCouponCode("");
+        setAppliedOffer(null);
+      }
+    } else {
+      setCouponCode("");
+      setAppliedOffer(null);
+    }
+  }, [merchant, availableOffers]);
+
+  const fetchOffers = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-offers');
+      if (error) throw error;
+      setAvailableOffers(data?.offers || []);
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+    }
+  };
 
   const handleAmountChange = (value: string) => {
     setAmount(value);
@@ -319,13 +357,25 @@ export const PaymentFlow = () => {
               type="text"
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              placeholder="Enter coupon code"
+              placeholder={appliedOffer ? "Auto-applied" : "Enter coupon code"}
               className="h-12 uppercase"
               disabled={paymentLoading}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Apply a coupon code from offers to get additional cashback
-            </p>
+            {appliedOffer ? (
+              <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
+                <Gift className="w-4 h-4" />
+                <span className="font-medium">
+                  {Math.round(appliedOffer.reward_percent * 100)}% Cashback Auto-Applied
+                </span>
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  {appliedOffer.title}
+                </Badge>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                Apply a coupon code from offers to get additional cashback
+              </p>
+            )}
           </div>
 
           {/* Routing Recommendation */}
