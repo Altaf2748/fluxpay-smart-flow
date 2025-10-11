@@ -149,22 +149,27 @@ export const PaymentFlow = () => {
     
     // Return zeros if amount is invalid or not entered
     if (isNaN(originalAmount) || originalAmount <= 0) {
-      return { original: 0, discount: 0, final: 0 };
+      return { original: 0, discount: 0, final: 0, discountPercent: 0 };
     }
     
     // If no offer applied, return original amount
     if (!appliedOffer || !appliedOffer.reward_percent) {
-      return { original: originalAmount, discount: 0, final: originalAmount };
+      return { original: originalAmount, discount: 0, final: originalAmount, discountPercent: 0 };
     }
     
-    // Generate random discount between 20-45 rupees
-    const discountAmount = Math.floor(Math.random() * (45 - 20 + 1)) + 20;
-    const finalAmount = Math.max(0, originalAmount - discountAmount);
+    // Randomly select discount percentage from [10%, 15%, 20%, 25%]
+    const discountPercentages = [0.10, 0.15, 0.20, 0.25];
+    const randomDiscountPercent = discountPercentages[Math.floor(Math.random() * discountPercentages.length)];
+    
+    // Calculate discount amount and final amount
+    const discountAmount = originalAmount * randomDiscountPercent;
+    const finalAmount = originalAmount - discountAmount;
     
     return {
       original: originalAmount,
       discount: discountAmount,
-      final: finalAmount
+      final: finalAmount,
+      discountPercent: randomDiscountPercent
     };
   };
 
@@ -410,7 +415,7 @@ export const PaymentFlow = () => {
                   </Badge>
                 </div>
                 {amount && parseFloat(amount) > 0 && !isNaN(parseFloat(amount)) && (() => {
-                  const { original, discount, final } = calculateDiscountedAmount();
+                  const { original, discount, final, discountPercent } = calculateDiscountedAmount();
                   if (original > 0 && !isNaN(discount) && !isNaN(final)) {
                     return (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
@@ -419,11 +424,11 @@ export const PaymentFlow = () => {
                           <span className="font-medium text-gray-900">₹{original.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-green-600">Discount Applied:</span>
+                          <span className="text-green-600">Discount ({Math.round(discountPercent * 100)}%):</span>
                           <span className="font-semibold text-green-600">-₹{discount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-base pt-2 border-t border-green-300">
-                          <span className="font-semibold text-gray-900">Amount to Pay:</span>
+                          <span className="font-semibold text-gray-900">Total Amount to Pay:</span>
                           <span className="font-bold text-green-700">₹{final.toFixed(2)}</span>
                         </div>
                       </div>
