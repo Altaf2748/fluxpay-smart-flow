@@ -30,30 +30,30 @@ const brandOffers = [
   },
   {
     title: "Zomato Gold Offer",
-    description: "Get 30% cashback on Zomato dining and delivery",
+    description: "Get 25% cashback on Zomato dining and delivery",
     mcc: "food",
-    reward_percent: 0.30,
+    reward_percent: 0.25,
     terms: "Valid on orders above ₹300. Max cashback ₹300"
   },
   {
-    title: "Nike Store - Flat 18% Back",
-    description: "Shop Nike shoes and apparel with 18% cashback",
+    title: "Nike Store - Flat 20% Back",
+    description: "Shop Nike shoes and apparel with 20% cashback",
     mcc: "retail",
-    reward_percent: 0.18,
+    reward_percent: 0.20,
     terms: "Valid on purchases above ₹2000. Max cashback ₹1000"
   },
   {
     title: "Myntra Fashion Sale",
-    description: "Myntra fashion haul with 22% instant cashback",
+    description: "Myntra fashion haul with 20% instant cashback",
     mcc: "fashion",
-    reward_percent: 0.22,
+    reward_percent: 0.20,
     terms: "Valid on purchases above ₹1500. Max cashback ₹800"
   },
   {
     title: "BookMyShow Movie Bonanza",
-    description: "35% cashback on movie ticket bookings",
+    description: "25% cashback on movie ticket bookings",
     mcc: "entertainment",
-    reward_percent: 0.35,
+    reward_percent: 0.25,
     terms: "Valid on bookings above ₹300. Max cashback ₹200"
   },
   {
@@ -65,9 +65,9 @@ const brandOffers = [
   },
   {
     title: "Big Bazaar Grocery Deals",
-    description: "Save 12% on grocery shopping at Big Bazaar",
+    description: "Save 10% on grocery shopping at Big Bazaar",
     mcc: "grocery",
-    reward_percent: 0.12,
+    reward_percent: 0.10,
     terms: "Valid on purchases above ₹500. Max cashback ₹300"
   },
   {
@@ -86,9 +86,9 @@ const brandOffers = [
   },
   {
     title: "Nykaa Beauty Bonanza",
-    description: "28% cashback on beauty and cosmetics",
+    description: "25% cashback on beauty and cosmetics",
     mcc: "beauty",
-    reward_percent: 0.28,
+    reward_percent: 0.25,
     terms: "Valid on purchases above ₹800. Max cashback ₹400"
   }
 ]
