@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Home, Gift, Zap, LogOut, Settings, History, Users, BarChart3, Star, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,7 +22,7 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
           .select('first_name, last_name')
           .eq('user_id', user.id)
           .single();
-        
+
         if (profile) {
           setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
         }
@@ -49,51 +48,65 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              FluxPay
-            </span>
+      {/* Slightly smaller max width than before to reduce extra whitespace */}
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6">
+        {/* Reduced height to make navbar feel less tall */}
+        <div className="flex items-center h-14">
+          {/* Left: logo and (optional) user name */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            
+            
+
+            {/* small profile pill, hidden on small screens */}
             {user && (
-              <div className="hidden md:flex items-center ml-4 space-x-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+              <div className="hidden md:flex items-center ml-3 space-x-2 px-2.5 py-1 bg-blue-50 rounded-lg">
                 <User className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">{userName}</span>
+                <span className="text-sm font-medium text-blue-900 truncate max-w-[9rem]">{userName}</span>
               </div>
             )}
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={cn(
-                      "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                      activeTab === item.id
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:block">{item.label}</span>
-                  </button>
-                );
-              })}
+
+          {/* Center: nav (flex-1) - but constrain nav items to a max width to avoid huge spread */}
+          <div className="flex-1 flex justify-center px-2">
+            {/* max-w constrains nav width (adjust 720px smaller/larger to taste) */}
+            <div
+              className="w-full max-w-[72rem] md:max-w-[60rem] lg:max-w-[48rem] flex items-center rounded-lg bg-gray-100 p-1 overflow-x-auto"
+              role="tablist"
+              aria-label="Main navigation"
+            >
+              <div className="flex items-center space-x-1 px-1">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      role="tab"
+                      aria-selected={activeTab === item.id}
+                      className={cn(
+                        "flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 flex-shrink-0 whitespace-nowrap",
+                        activeTab === item.id
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="hidden sm:block">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            
+          </div>
+
+          {/* Right: actions */}
+          <div className="flex items-center space-x-3 flex-shrink-0">
             {user && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSignOut}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 px-3 py-1.5"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:block">Sign Out</span>

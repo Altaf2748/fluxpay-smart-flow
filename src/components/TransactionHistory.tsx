@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,16 +34,15 @@ export const TransactionHistory = () => {
 
       if (error) throw error;
 
-      // Fetch sender names for received P2P transactions
       const transactionsWithNames = await Promise.all(
-        (data || []).map(async (txn) => {
+        (data || []).map(async (txn: any) => {
           if (txn.recipient_id === user.id && txn.transaction_type === 'p2p') {
             const { data: senderProfile } = await supabase
               .from('profiles')
               .select('first_name, last_name')
               .eq('user_id', txn.user_id)
               .single();
-            
+
             if (senderProfile) {
               const senderName = `${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim();
               return { ...txn, merchant: senderName || txn.merchant };
@@ -69,7 +67,6 @@ export const TransactionHistory = () => {
   useEffect(() => {
     fetchTransactions();
 
-    // Set up real-time subscription
     const channel = supabase
       .channel('schema-db-changes')
       .on(
@@ -86,6 +83,7 @@ export const TransactionHistory = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const getStatusIcon = (status: string) => {
@@ -124,7 +122,7 @@ export const TransactionHistory = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Transaction History</h1>
         <p className="text-gray-600">Your recent payment activity</p>
@@ -146,41 +144,75 @@ export const TransactionHistory = () => {
         <div className="space-y-4">
           {transactions.map((txn) => (
             <Card key={txn.id}>
-              <CardContent className="p-6">
+              <CardContent className="p-6 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-2 rounded-lg ${
-                      txn.rail === 'UPI' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                    }`}>
-                      {txn.rail === 'UPI' ? 
-                        <Smartphone className="w-5 h-5" /> : 
+                  {/* Left column: icon + texts */}
+                  <div className="flex items-start space-x-4 min-w-0">
+                    <div
+                      className={`p-2 rounded-lg mt-1 ${
+                        txn.rail === 'UPI' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                      }`}
+                    >
+                      {txn.rail === 'UPI' ? (
+                        <Smartphone className="w-5 h-5" />
+                      ) : (
                         <CreditCard className="w-5 h-5" />
-                      }
+                      )}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
+
+                    <div className="min-w-0 flex-1">
+                      {/* Merchant / title */}
+                      <h3 className="font-semibold text-gray-900 truncate">
                         {isReceivedTransaction(txn) ? `From ${txn.merchant}` : txn.merchant}
                       </h3>
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <span>{new Date(txn.created_at).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span>{txn.rail}</span>
-                        {isReceivedTransaction(txn) && (
-                          <>
-                            <span>•</span>
-                            <Badge variant="secondary" className="text-xs">Received</Badge>
-                          </>
-                        )}
-                        <span>•</span>
-                        <span>{txn.transaction_ref}</span>
+
+                      {/* Three separate lines:
+                          1) date
+                          2) payment mode (rail) and Received badge (if applicable)
+                          3) transaction id (single-line, smaller font to fit)
+                      */}
+                      <div className="mt-1 text-sm text-gray-500 space-y-1">
+                        {/* Line 1: date */}
+                        <div className="truncate">
+                          {new Date(txn.created_at).toLocaleString()}
+                        </div>
+
+                        {/* Line 2: payment mode and Received badge */}
+                        <div className="flex items-center space-x-2">
+                          <span className="truncate">{txn.rail}</span>
+                          {isReceivedTransaction(txn) && (
+                            <Badge variant="secondary" className="text-xs">
+                              Received
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Line 3: transaction id - keep on one line, smaller font
+                            - whitespace-nowrap + overflow-hidden ensures single line
+                            - increase max-w on larger screens so ID fits better
+                        */}
+                        <div
+                          className="text-xs font-mono text-gray-600 whitespace-nowrap overflow-hidden"
+                          style={{ maxWidth: '20rem' }}
+                        >
+                          {/* Option A: reduce font and allow whole ID to show on most screens.
+                              If you still want the whole ID guaranteed visible, consider
+                              using overflowX: 'auto' here so users can scroll to see it.
+                          */}
+                          {txn.transaction_ref}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+
+                  {/* Right column: amount + status - don't shrink */}
+                  <div className="text-right flex-shrink-0 ml-4">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className={`text-lg font-semibold ${
-                        isReceivedTransaction(txn) ? 'text-green-600' : 'text-gray-900'
-                      }`}>
+                      <span
+                        className={`text-lg font-semibold ${
+                          isReceivedTransaction(txn) ? 'text-green-600' : 'text-gray-900'
+                        }`}
+                      >
                         {isReceivedTransaction(txn) ? '+' : ''}₹{txn.amount.toFixed(2)}
                       </span>
                       {getStatusIcon(txn.status)}
