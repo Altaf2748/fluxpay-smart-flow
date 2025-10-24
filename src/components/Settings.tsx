@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Smartphone, Plus, Check } from 'lucide-react';
+import { CreditCard, Smartphone, Plus, Check, LogOut as LogOutIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MPINSetup } from './MPINSetup';
 import { MPINReset } from './MPINReset';
+import { useAuth } from './AuthProvider';
 
 export const Settings = () => {
+  const { signOut } = useAuth();
   const [vpa, setVpa] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [expiryMonth, setExpiryMonth] = useState('');
@@ -69,7 +71,7 @@ export const Settings = () => {
         setLinkedUPI(upiData);
         setUpiLinked(true);
       }
-      
+
       if (cardData) {
         setLinkedCard(cardData);
         setCardLinked(true);
@@ -118,12 +120,12 @@ export const Settings = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('link-payment-method', {
-        body: { 
-          type: 'CARD', 
-          cardNumber, 
-          expiryMonth, 
-          expiryYear, 
-          cvv 
+        body: {
+          type: 'CARD',
+          cardNumber,
+          expiryMonth,
+          expiryYear,
+          cvv
         }
       });
 
@@ -151,6 +153,24 @@ export const Settings = () => {
       });
     } finally {
       setCardLoading(false);
+    }
+  };
+
+  // NEW: sign out handler (used by the Sign Out button below)
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: 'Signed out',
+        description: 'You have been signed out.',
+      });
+    } catch (err: any) {
+      console.error('Sign out error', err);
+      toast({
+        title: 'Sign out failed',
+        description: err?.message || 'Unable to sign out. Try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -202,9 +222,9 @@ export const Settings = () => {
                     required
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={upiLoading}
                 >
                   {upiLoading ? (
@@ -302,9 +322,9 @@ export const Settings = () => {
                     />
                   </div>
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={cardLoading}
                 >
                   {cardLoading ? (
@@ -324,6 +344,39 @@ export const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* NEW: Sign Out card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Sign out from your account on this device. You can sign in again anytime.
+            </p>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+                className="flex items-center gap-2"
+              >
+                <LogOutIcon className="w-4 h-4" />
+                Sign Out
+              </Button>
+
+              {/* Optional destructive version if you prefer */}
+              {/* <Button className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-2" onClick={handleSignOut}>
+                <LogOutIcon className="w-4 h-4" />
+                Sign Out
+              </Button> */}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+export default Settings;
