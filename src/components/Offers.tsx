@@ -1,9 +1,9 @@
+// src/pages/Offers.tsx  (or replace your existing src/components/Offers.tsx)
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Gift, Calendar, CreditCard, Smartphone, Users, Star, Copy, Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -17,7 +17,7 @@ interface Offer {
   id: number;
   title: string;
   description: string;
-  validUntil: string;
+  validUntil: string | null;
   minAmount: number;
   maxCashback: number;
   category: string;
@@ -25,36 +25,151 @@ interface Offer {
   redeemCode: string;
 }
 
+const OFFERS: Offer[] = [
+  {
+    id: 1,
+    title: "Amazon Sale - 20% Cashback",
+    description: "Get 20% cashback on Amazon purchases using FluxPay",
+    validUntil: null,
+    minAmount: 500,
+    maxCashback: 500,
+    category: "ecommerce",
+    rail: "UPI",
+    redeemCode: "AMAZON20"
+  },
+  {
+    id: 2,
+    title: "Flipkart Big Billion Days",
+    description: "Exclusive 15% cashback on Flipkart with FluxPay UPI",
+    validUntil: null,
+    minAmount: 1000,
+    maxCashback: 1000,
+    category: "ecommerce",
+    rail: "UPI",
+    redeemCode: "FLIPKART15"
+  },
+  {
+    id: 3,
+    title: "Swiggy Food Fest - 25% Off",
+    description: "Enjoy 25% cashback on all Swiggy orders",
+    validUntil: null,
+    minAmount: 200,
+    maxCashback: 200,
+    category: "food",
+    rail: "UPI",
+    redeemCode: "SWIGGY25"
+  },
+  {
+    id: 4,
+    title: "Zomato Gold Offer",
+    description: "Get 25% cashback on Zomato dining and delivery",
+    validUntil: null,
+    minAmount: 300,
+    maxCashback: 300,
+    category: "food",
+    rail: "UPI",
+    redeemCode: "ZOMATO25"
+  },
+  {
+    id: 5,
+    title: "Nike Store - Flat 20% Back",
+    description: "Shop Nike shoes and apparel with 20% cashback",
+    validUntil: null,
+    minAmount: 2000,
+    maxCashback: 1000,
+    category: "retail",
+    rail: "CARD",
+    redeemCode: "NIKE20"
+  },
+  {
+    id: 6,
+    title: "Myntra Fashion Sale",
+    description: "Myntra fashion haul with 20% instant cashback",
+    validUntil: null,
+    minAmount: 1500,
+    maxCashback: 800,
+    category: "fashion",
+    rail: "CARD",
+    redeemCode: "MYNTRA20"
+  },
+  {
+    id: 7,
+    title: "BookMyShow Movie Bonanza",
+    description: "25% cashback on movie ticket bookings",
+    validUntil: null,
+    minAmount: 300,
+    maxCashback: 200,
+    category: "entertainment",
+    rail: "CARD",
+    redeemCode: "BMS25"
+  },
+  {
+    id: 8,
+    title: "Uber Rides Discount",
+    description: "Get 15% cashback on all Uber rides",
+    validUntil: null,
+    minAmount: 100,
+    maxCashback: 150,
+    category: "transport",
+    rail: "UPI",
+    redeemCode: "UBER15"
+  },
+  {
+    id: 9,
+    title: "Big Bazaar Grocery Deals",
+    description: "Save 10% on grocery shopping at Big Bazaar",
+    validUntil: null,
+    minAmount: 500,
+    maxCashback: 300,
+    category: "grocery",
+    rail: "UPI",
+    redeemCode: "BIGB10"
+  },
+  {
+    id: 10,
+    title: "Reliance Digital Electronics",
+    description: "Massive 10% cashback on electronics and gadgets",
+    validUntil: null,
+    minAmount: 5000,
+    maxCashback: 2000,
+    category: "electronics",
+    rail: "CARD",
+    redeemCode: "RELIANCE10"
+  },
+  {
+    id: 11,
+    title: "Decathlon Sports Sale",
+    description: "Get 20% back on sports equipment and gear",
+    validUntil: null,
+    minAmount: 1000,
+    maxCashback: 500,
+    category: "sports",
+    rail: "UPI",
+    redeemCode: "DECATHLON20"
+  },
+  {
+    id: 12,
+    title: "Nykaa Beauty Bonanza",
+    description: "25% cashback on beauty and cosmetics",
+    validUntil: null,
+    minAmount: 800,
+    maxCashback: 400,
+    category: "beauty",
+    rail: "CARD",
+    redeemCode: "NYKAA25"
+  }
+];
+
 export const Offers = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchOffers();
+    // load the static offers into state
+    setOffers(OFFERS);
   }, []);
-
-  const fetchOffers = async () => {
-    try {
-      setLoading(true);
-      const { data: response, error } = await supabase.functions.invoke('get-offers');
-
-      if (error) throw error;
-
-      setOffers(response.offers || []);
-    } catch (error) {
-      console.error('Error fetching offers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch offers",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getRailIcon = (rail: string) => {
     switch (rail) {
@@ -82,7 +197,8 @@ export const Offers = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'No expiry';
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -90,7 +206,8 @@ export const Offers = () => {
     });
   };
 
-  const isExpiringSoon = (dateString: string) => {
+  const isExpiringSoon = (dateString: string | null) => {
+    if (!dateString) return false;
     const expiryDate = new Date(dateString);
     const today = new Date();
     const diffTime = expiryDate.getTime() - today.getTime();
@@ -114,16 +231,6 @@ export const Offers = () => {
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -264,3 +371,5 @@ export const Offers = () => {
     </div>
   );
 };
+
+export default Offers;
