@@ -42,22 +42,25 @@ export const PaymentFlow = () => {
   }, []);
 
   useEffect(() => {
-    // Auto-apply coupon when merchant is selected
+    // Auto-apply a coupon code whenever merchant and offers are available
     if (merchant && availableOffers.length > 0) {
-      const matchingOffer = availableOffers.find(offer => {
+      // First try to find a matching offer for the merchant
+      let matchingOffer = availableOffers.find(offer => {
         const merchantName = merchant.toLowerCase();
         const offerMerchant = offer.title.split(' ')[0].toLowerCase();
         return merchantName.includes(offerMerchant) || offerMerchant.includes(merchantName);
       });
 
+      // If no matching offer, pick a random offer to always give a discount
+      if (!matchingOffer && availableOffers.length > 0) {
+        matchingOffer = availableOffers[Math.floor(Math.random() * availableOffers.length)];
+      }
+
       if (matchingOffer) {
         setCouponCode(matchingOffer.redeem_code);
         setAppliedOffer(matchingOffer);
-      } else {
-        setCouponCode("");
-        setAppliedOffer(null);
       }
-    } else {
+    } else if (!merchant) {
       setCouponCode("");
       setAppliedOffer(null);
     }

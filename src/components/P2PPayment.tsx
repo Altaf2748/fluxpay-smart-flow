@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Search, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, Search, CheckCircle, XCircle, Loader2, QrCode, Scan } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MPINDialog } from './MPINDialog';
@@ -26,15 +28,83 @@ export const P2PPayment = () => {
   const [resolving, setResolving] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showMPINDialog, setShowMPINDialog] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [html5QrCode, setHtml5QrCode] = useState<Html5Qrcode | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    return () => {
+      if (html5QrCode && isScanning) {
+        html5QrCode.stop().catch(console.error);
+      }
+    };
+  }, [html5QrCode, isScanning]);
 
   const validateIdentifier = (value: string) => {
     const mobileRegex = /^[6-9]\d{9}$/;
     return mobileRegex.test(value);
   };
 
-  const resolveContact = async () => {
-    if (!validateIdentifier(identifier)) {
+  const startQRScanner = async () => {
+    try {
+      setIsScanning(true);
+      const qrCode = new Html5Qrcode("qr-reader");
+      setHtml5QrCode(qrCode);
+
+      await qrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        async (decodedText) => {
+          try {
+            const qrData = JSON.parse(decodedText);
+            if (qrData.type === 'fluxpay' && qrData.phone) {
+              setIdentifier(qrData.phone);
+              await qrCode.stop();
+              setIsScanning(false);
+              setHtml5QrCode(null);
+              
+              // Auto-resolve the contact
+              await resolveContactByPhone(qrData.phone);
+            } else {
+              toast({
+                title: "Invalid QR Code",
+                description: "This is not a valid FluxPay QR code",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            console.error('QR scan error:', error);
+          }
+        },
+        (errorMessage) => {
+          // Ignore scan errors as they happen frequently
+          console.log('QR scan ongoing...');
+        }
+      );
+    } catch (error) {
+      console.error('Failed to start scanner:', error);
+      toast({
+        title: "Camera Error",
+        description: "Could not access camera. Please grant permission.",
+        variant: "destructive",
+      });
+      setIsScanning(false);
+    }
+  };
+
+  const stopQRScanner = async () => {
+    if (html5QrCode && isScanning) {
+      await html5QrCode.stop();
+      setHtml5QrCode(null);
+      setIsScanning(false);
+    }
+  };
+
+  const resolveContactByPhone = async (phone: string) => {
+    if (!validateIdentifier(phone)) {
       toast({
         title: "Invalid Input",
         description: "Please enter a valid 10-digit mobile number",
@@ -46,7 +116,7 @@ export const P2PPayment = () => {
     setResolving(true);
     try {
       const { data, error } = await supabase.functions.invoke('resolve-upi', {
-        body: { identifier }
+        body: { identifier: phone }
       });
 
       if (error) throw error;
@@ -76,6 +146,10 @@ export const P2PPayment = () => {
     } finally {
       setResolving(false);
     }
+  };
+
+  const resolveContact = async () => {
+    await resolveContactByPhone(identifier);
   };
 
   const handleConfirmPayment = () => {
@@ -177,38 +251,81 @@ export const P2PPayment = () => {
               <CardHeader>
                 <CardTitle>Find Contact</CardTitle>
                 <CardDescription>
-                  Enter mobile number to send money
+                  Enter mobile number or scan QR code
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="identifier">Mobile Number</Label>
-                  <Input
-                    id="identifier"
-                    placeholder="9876543210"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value.replace(/\D/g, ''))}
-                    maxLength={10}
-                  />
-                </div>
-                
-                <Button 
-                  onClick={resolveContact} 
-                  disabled={!identifier || resolving}
-                  className="w-full"
-                >
-                  {resolving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Resolving...
-                    </>
-                  ) : (
-                    <>
+                <Tabs defaultValue="manual" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="manual">
                       <Search className="w-4 h-4 mr-2" />
-                      Find Contact
-                    </>
-                  )}
-                </Button>
+                      Manual
+                    </TabsTrigger>
+                    <TabsTrigger value="scan">
+                      <Scan className="w-4 h-4 mr-2" />
+                      Scan QR
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="manual" className="space-y-4">
+                    <div>
+                      <Label htmlFor="identifier">Mobile Number</Label>
+                      <Input
+                        id="identifier"
+                        placeholder="9876543210"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value.replace(/\D/g, ''))}
+                        maxLength={10}
+                      />
+                    </div>
+                    
+                    <Button 
+                      onClick={resolveContact} 
+                      disabled={!identifier || resolving}
+                      className="w-full"
+                    >
+                      {resolving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Resolving...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          Find Contact
+                        </>
+                      )}
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="scan" className="space-y-4">
+                    {!isScanning ? (
+                      <div className="space-y-4">
+                        <div className="text-center text-muted-foreground text-sm">
+                          Scan a FluxPay QR code to send money instantly
+                        </div>
+                        <Button 
+                          onClick={startQRScanner} 
+                          className="w-full"
+                        >
+                          <QrCode className="w-4 h-4 mr-2" />
+                          Start Camera
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div id="qr-reader" className="w-full rounded-lg overflow-hidden border-2 border-primary"></div>
+                        <Button 
+                          onClick={stopQRScanner} 
+                          variant="outline"
+                          className="w-full"
+                        >
+                          Cancel Scan
+                        </Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           )}

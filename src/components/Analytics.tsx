@@ -41,8 +41,9 @@ export const Analytics = () => {
   }, [selectedMonth]);
 
   const totalSpent = data.reduce((sum, item) => sum + item.total, 0);
-  const upiTotal = data.reduce((sum, item) => sum + item.upi + item.upi_p2p, 0);
+  const upiTotal = data.reduce((sum, item) => sum + item.upi, 0);
   const cardTotal = data.reduce((sum, item) => sum + item.card, 0);
+  const p2pTotal = data.reduce((sum, item) => sum + item.upi_p2p, 0);
 
   const months = Array.from({ length: 12 }, (_, i) => {
     const date = new Date();
@@ -94,7 +95,7 @@ export const Analytics = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
@@ -103,7 +104,7 @@ export const Analytics = () => {
           <CardContent>
             <div className="text-2xl font-bold">₹{totalSpent.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {data.length} transactions this month
+              {data.length} transactions
             </p>
           </CardContent>
         </Card>
@@ -130,6 +131,19 @@ export const Analytics = () => {
             <div className="text-2xl font-bold">₹{cardTotal.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               {((cardTotal / totalSpent) * 100 || 0).toFixed(1)}% of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">P2P Transfers</CardTitle>
+            <Smartphone className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹{p2pTotal.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {((p2pTotal / totalSpent) * 100 || 0).toFixed(1)}% of total
             </p>
           </CardContent>
         </Card>

@@ -12,6 +12,8 @@ import { Offers } from '@/components/Offers';
 import { P2PPayment } from '@/components/P2PPayment';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
+import { UserQRCode } from '@/components/UserQRCode';
+import { FinanceChatbot } from '@/components/FinanceChatbot';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -38,11 +40,13 @@ const Index = () => {
       )}
       {activeTab === 'pay' && <PaymentFlow />}
       {activeTab === 'p2p' && <P2PPayment />}
+      {activeTab === 'qrcode' && <UserQRCode />}
       {activeTab === 'history' && <TransactionHistory />}
       {activeTab === 'settings' && <Settings />}
       {activeTab === 'rewards' && <RewardsSection />}
       {activeTab === 'analytics' && <Analytics />}
       {activeTab === 'offers' && <Offers />}
+      {activeTab === 'chat' && <FinanceChatbot />}
     </div>
   );
 };
