@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MPINSetup } from './MPINSetup';
 import { MPINReset } from './MPINReset';
 import { useAuth } from './AuthProvider';
+import { UserQRCode } from './UserQRCode';
 
 export const Settings = () => {
   const { signOut } = useAuth();
@@ -344,6 +345,9 @@ export const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Code Section */}
+      <UserQRCode />
 
       {/* NEW: Sign Out card */}
       <Card>

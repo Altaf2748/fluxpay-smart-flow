@@ -10,7 +10,6 @@ import {
   BarChart3,
   Star,
   User as UserIcon,
-  QrCode,
   MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -59,7 +58,6 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'pay', label: 'Pay', icon: CreditCard },
     { id: 'p2p', label: 'Send', icon: Users },
-    { id: 'qrcode', label: 'QR', icon: QrCode },
     { id: 'history', label: 'History', icon: History },
     { id: 'rewards', label: 'Rewards', icon: Star },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
