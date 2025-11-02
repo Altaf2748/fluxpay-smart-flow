@@ -68,56 +68,43 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center h-12">
-          {/* LEFT: Logo */}
-          
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between h-14 sm:h-16">
+          {/* Logo */}
+          <div className="flex-shrink-0 font-bold text-lg sm:text-xl text-primary">
+            FluxPay
+          </div>
 
-          {/* CENTER: Nav (scrolls horizontally on small screens) */}
-          <div className="flex-1 flex justify-center px-2">
-            <div
-              className="w-full max-w-[56rem] flex items-center rounded-lg bg-gray-100 p-1 overflow-x-auto no-scrollbar"
-              role="tablist"
-              aria-label="Main navigation"
-            >
-              <div className="flex items-center gap-1 px-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      role="tab"
-                      aria-selected={activeTab === item.id}
-                      className={cn(
-                        'flex items-center gap-2 px-2.5 py-1 rounded-md text-xs sm:text-sm font-medium transition duration-150 flex-shrink-0 whitespace-nowrap',
-                        activeTab === item.id
-                          ? 'bg-white text-blue-600 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden sm:inline">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+          {/* Nav Items - Horizontal Scroll on Mobile */}
+          <div className="flex-1 mx-4 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 sm:gap-2 min-w-max">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      'flex flex-col sm:flex-row items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex-shrink-0',
+                      activeTab === item.id
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    )}
+                  >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* RIGHT: User avatar + menu (no Sign out here anymore) */}
-          <div className="flex items-center gap-3 flex-shrink-0 relative" ref={menuRef}>
-            {user ? (
-              <>
-                
-
-                {/* dropdown: removed sign out; added Settings link */}
-                
-              </>
-            ) : (
-              <div className="text-sm text-gray-700">Guest</div>
-            )}
-          </div>
+          {/* User Badge */}
+          {user && (
+            <div className="flex-shrink-0 text-xs sm:text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+              {userName}
+            </div>
+          )}
         </div>
       </div>
     </nav>

@@ -159,15 +159,15 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome, {userName}!</h1>
-        <p className="text-gray-600">Here's your financial overview</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome, {userName}!</h1>
+        <p className="text-sm sm:text-base text-gray-600">Here's your financial overview</p>
       </div>
 
       {/* Balance Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Main Balance */}
         <Card className="md:col-span-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white border-0">
           <CardHeader className="pb-4">
@@ -239,37 +239,37 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Button 
-          className="h-16 bg-blue-600 hover:bg-blue-700 flex-col space-y-1"
+          className="h-14 sm:h-16 bg-blue-600 hover:bg-blue-700 flex-col space-y-1"
           onClick={onNavigateToPayment}
         >
-          <Zap className="w-5 h-5" />
-          <span className="text-sm">Quick Pay</span>
+          <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-xs sm:text-sm">Quick Pay</span>
         </Button>
         <Button 
           variant="outline" 
-          className="h-16 flex-col space-y-1"
+          className="h-14 sm:h-16 flex-col space-y-1"
           onClick={onNavigateToSettings}
         >
-          <Plus className="w-5 h-5" />
-          <span className="text-sm">Add Card</span>
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-xs sm:text-sm">Add Card</span>
         </Button>
         <Button 
           variant="outline" 
-          className="h-16 flex-col space-y-1"
+          className="h-14 sm:h-16 flex-col space-y-1"
           onClick={onNavigateToAnalytics}
         >
-          <BarChart3 className="w-5 h-5" />
-          <span className="text-sm">Analytics</span>
+          <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-xs sm:text-sm">Analytics</span>
         </Button>
         <Button 
           variant="outline" 
-          className="h-16 flex-col space-y-1"
+          className="h-14 sm:h-16 flex-col space-y-1"
           onClick={onNavigateToOffers}
         >
-          <Gift className="w-5 h-5" />
-          <span className="text-sm">Offers</span>
+          <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-xs sm:text-sm">Offers</span>
         </Button>
       </div>
 

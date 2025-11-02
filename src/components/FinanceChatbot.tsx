@@ -80,69 +80,69 @@ export const FinanceChatbot = () => {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 max-w-4xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Sparkles className="w-8 h-8 text-primary" />
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Finance Assistant</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Your personal financial advisor</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text">Finance Assistant</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Your personal financial advisor</p>
         </div>
       </div>
 
-      <Card className="h-[600px] flex flex-col">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
+      <Card className="h-[calc(100vh-12rem)] sm:h-[600px] max-h-[800px] flex flex-col">
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
             Chat
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Ask me anything about finance, savings, loans, or deals
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="flex-1 flex flex-col p-0">
-          <ScrollArea ref={scrollRef} className="flex-1 px-4 sm:px-6">
-            <div className="space-y-4 py-4">
+        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+          <ScrollArea ref={scrollRef} className="flex-1 px-3 sm:px-4 md:px-6">
+            <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
               {messages.map((message, index) => (
                 <div
                   key={index}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] sm:max-w-[80%] rounded-lg px-4 py-3 ${
+                    className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-lg px-3 py-2 sm:px-4 sm:py-3 ${
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-foreground'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
                 </div>
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg px-4 py-3">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <div className="bg-muted rounded-lg px-3 py-2 sm:px-4 sm:py-3">
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-muted-foreground" />
                   </div>
                 </div>
               )}
             </div>
           </ScrollArea>
 
-          <div className="border-t p-4">
+          <div className="border-t p-3 sm:p-4 flex-shrink-0">
             <div className="flex gap-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask about finance, deals, savings, loans..."
+                placeholder="Ask about finance, deals, savings..."
                 disabled={loading}
-                className="flex-1 h-11"
+                className="flex-1 h-10 sm:h-11 text-sm"
               />
               <Button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
                 size="icon"
-                className="h-11 w-11"
+                className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

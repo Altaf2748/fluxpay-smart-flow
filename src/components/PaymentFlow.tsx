@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Smartphone, CreditCard, Zap, AlertCircle, CheckCircle, Gift } from 'lucide-react';
+import { ArrowRight, Smartphone, CreditCard, Zap, AlertCircle, CheckCircle, Gift, QrCode, Scan } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MPINDialog } from './MPINDialog';
@@ -35,11 +37,19 @@ export const PaymentFlow = () => {
   const [availableOffers, setAvailableOffers] = useState<any[]>([]);
   const [appliedOffer, setAppliedOffer] = useState<any>(null);
   const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [isScanning, setIsScanning] = useState(false);
+  const [html5QrCode, setHtml5QrCode] = useState<Html5Qrcode | null>(null);
+  const [scanMode, setScanMode] = useState<'merchant' | 'p2p'>('merchant');
   const { toast } = useToast();
 
   useEffect(() => {
     fetchOffers();
-  }, []);
+    return () => {
+      if (html5QrCode && isScanning) {
+        html5QrCode.stop().catch(console.error);
+      }
+    };
+  }, [html5QrCode, isScanning]);
 
   useEffect(() => {
     // Auto-apply a coupon code whenever merchant and offers are available
@@ -161,20 +171,84 @@ export const PaymentFlow = () => {
       return { original: originalAmount, discount: 0, final: originalAmount, discountPercent: 0 };
     }
     
-    // Randomly select discount percentage from [10%, 15%, 20%, 25%]
-    const discountPercentages = [0.10, 0.15, 0.20, 0.25];
-    const randomDiscountPercent = discountPercentages[Math.floor(Math.random() * discountPercentages.length)];
+    // Use the reward_percent from the applied offer instead of random
+    const discountPercent = appliedOffer.reward_percent || 0;
     
     // Calculate discount amount and final amount
-    const discountAmount = originalAmount * randomDiscountPercent;
+    const discountAmount = originalAmount * discountPercent;
     const finalAmount = originalAmount - discountAmount;
     
     return {
       original: originalAmount,
       discount: discountAmount,
       final: finalAmount,
-      discountPercent: randomDiscountPercent
+      discountPercent: discountPercent
     };
+  };
+
+  const startQRScanner = async (mode: 'merchant' | 'p2p') => {
+    try {
+      setScanMode(mode);
+      setIsScanning(true);
+      const qrCode = new Html5Qrcode("qr-reader-payment");
+      setHtml5QrCode(qrCode);
+
+      await qrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        async (decodedText) => {
+          try {
+            const qrData = JSON.parse(decodedText);
+            if (qrData.type === 'fluxpay' && qrData.phone) {
+              await qrCode.stop();
+              setIsScanning(false);
+              setHtml5QrCode(null);
+              
+              if (mode === 'p2p') {
+                // Set merchant as the user's name from QR
+                setMerchant(qrData.name || qrData.phone);
+                setScanMode('merchant');
+              }
+              
+              toast({
+                title: "QR Code Scanned",
+                description: `Recipient: ${qrData.name || qrData.phone}`,
+              });
+            } else {
+              toast({
+                title: "Invalid QR Code",
+                description: "This is not a valid FluxPay QR code",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            console.error('QR scan error:', error);
+          }
+        },
+        (errorMessage) => {
+          console.log('QR scan ongoing...');
+        }
+      );
+    } catch (error) {
+      console.error('Failed to start scanner:', error);
+      toast({
+        title: "Camera Error",
+        description: "Could not access camera. Please grant permission.",
+        variant: "destructive",
+      });
+      setIsScanning(false);
+    }
+  };
+
+  const stopQRScanner = async () => {
+    if (html5QrCode && isScanning) {
+      await html5QrCode.stop();
+      setHtml5QrCode(null);
+      setIsScanning(false);
+    }
   };
 
   const handleMpinConfirm = async (mpin: string) => {
@@ -329,21 +403,32 @@ export const PaymentFlow = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-lg sm:text-xl">
             <Zap className="w-5 h-5 mr-2 text-blue-600" />
             FluxPay Checkout
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Merchant Input */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Merchant or Recipient
-            </label>
-            <div className="space-y-2">
+        <CardContent className="space-y-4 sm:space-y-6">
+          {/* Merchant Input with Tabs */}
+          <Tabs defaultValue="search" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="search">
+                <Smartphone className="w-4 h-4 mr-2" />
+                Search
+              </TabsTrigger>
+              <TabsTrigger value="scan">
+                <Scan className="w-4 h-4 mr-2" />
+                Scan QR
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="search" className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Merchant or Recipient
+              </label>
               <Input
                 type="text"
                 value={merchant}
@@ -351,12 +436,12 @@ export const PaymentFlow = () => {
                   setMerchant(e.target.value);
                   setSearchQuery(e.target.value);
                 }}
-                placeholder="Search merchant (e.g., Starbucks, Amazon)"
-                className="h-12"
+                placeholder="Search merchant"
+                className="h-11 sm:h-12"
                 disabled={paymentLoading}
               />
               
-              {/* Always visible merchant grid */}
+              {/* Merchant grid */}
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
                 {filteredMerchants.slice(0, 20).map((merchantName) => (
                   <button
@@ -366,7 +451,7 @@ export const PaymentFlow = () => {
                       setMerchant(merchantName);
                       setSearchQuery('');
                     }}
-                    className={`px-3 py-2 text-sm rounded-md transition-all ${
+                    className={`px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-md transition-all ${
                       merchant === merchantName
                         ? 'bg-blue-600 text-white font-medium'
                         : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
@@ -377,8 +462,36 @@ export const PaymentFlow = () => {
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="scan" className="space-y-4">
+              {!isScanning ? (
+                <div className="space-y-4">
+                  <div className="text-center text-muted-foreground text-sm">
+                    Scan a FluxPay user QR code to pay them instantly
+                  </div>
+                  <Button 
+                    onClick={() => startQRScanner('p2p')} 
+                    className="w-full h-11 sm:h-12"
+                  >
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Start Camera
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div id="qr-reader-payment" className="w-full rounded-lg overflow-hidden border-2 border-primary"></div>
+                  <Button 
+                    onClick={stopQRScanner} 
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Cancel Scan
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
           {/* Amount Input */}
           <div>
@@ -392,7 +505,7 @@ export const PaymentFlow = () => {
                 value={amount}
                 onChange={(e) => handleAmountChange(e.target.value)}
                 placeholder="0.00"
-                className="pl-8 text-lg h-12"
+                className="pl-8 text-base sm:text-lg h-11 sm:h-12"
                 disabled={paymentLoading}
               />
             </div>
@@ -408,7 +521,7 @@ export const PaymentFlow = () => {
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
               placeholder={appliedOffer ? "Auto-applied" : "Enter coupon code"}
-              className="h-12 uppercase"
+              className="h-11 sm:h-12 uppercase text-sm sm:text-base"
               disabled={paymentLoading}
             />
             {appliedOffer ? (
