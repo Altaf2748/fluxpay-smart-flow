@@ -271,6 +271,17 @@ export const PaymentFlow = () => {
       return;
     }
 
+    // Only send coupon code if it's valid and exists in our offers
+    let validCouponCode = null;
+    if (couponCode?.trim()) {
+      const offerExists = availableOffers.some(
+        offer => offer.redeem_code === couponCode.trim()
+      );
+      if (offerExists) {
+        validCouponCode = couponCode.trim();
+      }
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
@@ -278,7 +289,7 @@ export const PaymentFlow = () => {
           amount: finalAmount,
           rail: selectedMethod,
           mpin,
-          couponCode: couponCode?.trim() || null
+          couponCode: validCouponCode
         }
       });
 
