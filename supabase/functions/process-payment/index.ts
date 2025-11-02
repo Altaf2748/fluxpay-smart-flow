@@ -144,37 +144,12 @@ serve(async (req) => {
       })
       .eq('user_id', user.id)
 
-    // Check balance
-    if (profile.balance < amount) {
-      return new Response(JSON.stringify({ 
-        success: false,
-        error: 'Insufficient balance',
-        message: 'You do not have enough balance for this transaction'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-    
-    // Generate transaction reference
-    const transactionRef = `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`
-    
-    // Mock payment processing
-    let paymentResult
-    if (rail === 'UPI') {
-      // Mock NPCI Collect API
-      paymentResult = await mockNPCICollect(amount)
-    } else if (rail === 'CARD') {
-      // Mock Card Network API
-      paymentResult = await mockCardAuth(amount)
-    } else {
-      throw new Error('Invalid payment rail')
-    }
-
-    // Calculate rewards (UPI: 5%, Card: 2%)
+    // Calculate rewards and discount
     let rewardPercent = rail === 'UPI' ? 0.05 : 0.02
     let couponApplied = false
     let appliedOffer = null
+    let discountAmount = 0
+    let finalPaymentAmount = parseFloat(amount)
 
     // Validate and apply coupon code if provided
     if (couponCode && couponCode.trim() !== '') {
@@ -197,25 +172,53 @@ serve(async (req) => {
         })
       }
 
-      // Check if merchant matches the offer's MCC category
-      // For simplicity, we'll accept the coupon for now
-      // In production, you'd match merchant to MCC codes
+      // Apply discount to payment amount
       rewardPercent = offer.reward_percent
+      discountAmount = parseFloat(amount) * rewardPercent
+      finalPaymentAmount = parseFloat(amount) - discountAmount
       couponApplied = true
       appliedOffer = offer
-      console.log(`Coupon ${couponCode} applied: ${offer.reward_percent * 100}% cashback`)
+      console.log(`Coupon ${couponCode} applied: ${offer.reward_percent * 100}% discount = ₹${discountAmount}, final amount = ₹${finalPaymentAmount}`)
     }
 
-    const cashback = paymentResult.success ? parseFloat(amount) * rewardPercent : 0
+    // Check balance against final payment amount
+    if (profile.balance < finalPaymentAmount) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Insufficient balance',
+        message: 'You do not have enough balance for this transaction'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    
+    // Generate transaction reference
+    const transactionRef = `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`
+    
+    // Mock payment processing with final amount
+    let paymentResult
+    if (rail === 'UPI') {
+      // Mock NPCI Collect API
+      paymentResult = await mockNPCICollect(finalPaymentAmount)
+    } else if (rail === 'CARD') {
+      // Mock Card Network API
+      paymentResult = await mockCardAuth(finalPaymentAmount)
+    } else {
+      throw new Error('Invalid payment rail')
+    }
+
+    // Calculate cashback rewards on final amount
+    const cashback = paymentResult.success ? finalPaymentAmount * 0.02 : 0
     const points = Math.round(cashback)
 
-    // Insert transaction record
+    // Insert transaction record with final amount
     const { data: transaction, error } = await supabaseClient
       .from('transactions')
       .insert({
         user_id: user.id,
         merchant,
-        amount: parseFloat(amount),
+        amount: finalPaymentAmount,
         rail,
         status: paymentResult.success ? 'success' : 'failed',
         transaction_ref: transactionRef,
@@ -229,13 +232,13 @@ serve(async (req) => {
       throw error
     }
 
-    // If payment successful, update user balance and add rewards
+    // If payment successful, update user balance with final amount
     if (paymentResult.success) {
-      // Deduct amount from user's balance
+      // Deduct final payment amount from user's balance
       const { error: balanceError } = await supabaseClient
         .from('profiles')
         .update({ 
-          balance: parseFloat(profile.balance) - parseFloat(amount)
+          balance: parseFloat(profile.balance) - finalPaymentAmount
         })
         .eq('user_id', user.id)
 
@@ -261,7 +264,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Payment ${transactionRef}: ${paymentResult.success ? 'SUCCESS' : 'FAILED'} - ₹${amount} via ${rail} - Cashback: ₹${cashback}`)
+    console.log(`Payment ${transactionRef}: ${paymentResult.success ? 'SUCCESS' : 'FAILED'} - Original: ₹${amount}, Discount: ₹${discountAmount.toFixed(2)}, Final: ₹${finalPaymentAmount.toFixed(2)} via ${rail} - Cashback: ₹${cashback.toFixed(2)}`)
 
     return new Response(
       JSON.stringify({
@@ -272,7 +275,10 @@ serve(async (req) => {
           cashback, 
           points,
           couponApplied,
-          offerTitle: appliedOffer?.title
+          offerTitle: appliedOffer?.title,
+          discountAmount,
+          originalAmount: parseFloat(amount),
+          finalAmount: finalPaymentAmount
         } : null
       }),
       {

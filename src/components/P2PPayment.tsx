@@ -48,6 +48,31 @@ export const P2PPayment = () => {
   const startQRScanner = async () => {
     try {
       setIsScanning(true);
+      
+      // Check if browser supports camera access
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast({
+          title: "Camera Not Supported",
+          description: "Your browser doesn't support camera access",
+          variant: "destructive",
+        });
+        setIsScanning(false);
+        return;
+      }
+
+      // Request camera permission first
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      } catch (permError: any) {
+        toast({
+          title: "Camera Permission Denied",
+          description: "Please allow camera access in your browser settings to scan QR codes",
+          variant: "destructive",
+        });
+        setIsScanning(false);
+        return;
+      }
+
       const qrCode = new Html5Qrcode("qr-reader");
       setHtml5QrCode(qrCode);
 
@@ -84,11 +109,21 @@ export const P2PPayment = () => {
           console.log('QR scan ongoing...');
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to start scanner:', error);
+      
+      let errorMessage = "Could not access camera. Please grant permission in your browser settings.";
+      if (error?.name === 'NotAllowedError') {
+        errorMessage = "Camera permission denied. Please allow camera access and try again.";
+      } else if (error?.name === 'NotFoundError') {
+        errorMessage = "No camera found on this device.";
+      } else if (error?.name === 'NotReadableError') {
+        errorMessage = "Camera is being used by another application.";
+      }
+      
       toast({
         title: "Camera Error",
-        description: "Could not access camera. Please grant permission.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsScanning(false);

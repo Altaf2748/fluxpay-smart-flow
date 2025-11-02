@@ -190,6 +190,31 @@ export const PaymentFlow = () => {
     try {
       setScanMode(mode);
       setIsScanning(true);
+      
+      // Check if browser supports camera access
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast({
+          title: "Camera Not Supported",
+          description: "Your browser doesn't support camera access",
+          variant: "destructive",
+        });
+        setIsScanning(false);
+        return;
+      }
+
+      // Request camera permission first
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      } catch (permError: any) {
+        toast({
+          title: "Camera Permission Denied",
+          description: "Please allow camera access in your browser settings to scan QR codes",
+          variant: "destructive",
+        });
+        setIsScanning(false);
+        return;
+      }
+
       const qrCode = new Html5Qrcode("qr-reader-payment");
       setHtml5QrCode(qrCode);
 
@@ -232,11 +257,21 @@ export const PaymentFlow = () => {
           console.log('QR scan ongoing...');
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to start scanner:', error);
+      
+      let errorMessage = "Could not access camera. Please grant permission in your browser settings.";
+      if (error?.name === 'NotAllowedError') {
+        errorMessage = "Camera permission denied. Please allow camera access and try again.";
+      } else if (error?.name === 'NotFoundError') {
+        errorMessage = "No camera found on this device.";
+      } else if (error?.name === 'NotReadableError') {
+        errorMessage = "Camera is being used by another application.";
+      }
+      
       toast({
         title: "Camera Error",
-        description: "Could not access camera. Please grant permission.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsScanning(false);
@@ -255,13 +290,15 @@ export const PaymentFlow = () => {
     setShowMpinDialog(false);
     setPaymentLoading(true);
 
-    const { final: finalAmount } = calculateDiscountedAmount();
+    // Get both original and final amounts
+    const { original: originalAmount, final: finalAmount } = calculateDiscountedAmount();
     
     // Store the final paid amount for display
     setPaidAmount(finalAmount);
     
     // Validate amount before proceeding
-    if (!finalAmount || finalAmount <= 0 || isNaN(finalAmount)) {
+    const amountToValidate = originalAmount || parseFloat(amount);
+    if (!amountToValidate || amountToValidate <= 0 || isNaN(amountToValidate)) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid payment amount",
@@ -283,10 +320,11 @@ export const PaymentFlow = () => {
     }
 
     try {
+      // Send ORIGINAL amount to backend - let backend apply discount
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
           merchant,
-          amount: finalAmount,
+          amount: originalAmount || parseFloat(amount),
           rail: selectedMethod,
           mpin,
           couponCode: validCouponCode
@@ -299,9 +337,14 @@ export const PaymentFlow = () => {
       setPaymentComplete(true);
 
       if (data.success) {
+        // Update paid amount with actual transaction amount
+        if (data.transaction?.amount) {
+          setPaidAmount(data.transaction.amount);
+        }
+        
         toast({
           title: "Payment Successful!",
-          description: `₹${finalAmount.toFixed(2)} paid to ${merchant}`,
+          description: `₹${data.transaction?.amount?.toFixed(2) || finalAmount.toFixed(2)} paid to ${merchant}`,
         });
         // Trigger a storage event to refresh balance across components
         window.dispatchEvent(new Event('balance-updated'));
@@ -374,15 +417,39 @@ export const PaymentFlow = () => {
             {paymentResult.success && paymentResult.rewards && (
               <div className="bg-white rounded-lg p-4 mb-6">
                 {paymentResult.rewards.couponApplied && (
-                  <div className="flex items-center justify-between text-sm mb-3 pb-3 border-b">
-                    <span className="flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-green-600" />
-                      Coupon Applied
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      {paymentResult.rewards.offerTitle}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between text-sm mb-3 pb-3 border-b">
+                      <span className="flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-green-600" />
+                        Coupon Applied
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        {paymentResult.rewards.offerTitle}
+                      </span>
+                    </div>
+                    {paymentResult.rewards.originalAmount && paymentResult.rewards.discountAmount > 0 && (
+                      <>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600">Original Amount:</span>
+                          <span className="font-medium text-gray-500 line-through">
+                            ₹{paymentResult.rewards.originalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-3 pb-3 border-b">
+                          <span className="text-green-600 font-medium">Discount Applied:</span>
+                          <span className="font-semibold text-green-600">
+                            -₹{paymentResult.rewards.discountAmount.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-base mb-3 pb-3 border-b">
+                          <span className="font-bold text-gray-900">Amount Paid:</span>
+                          <span className="font-bold text-primary">
+                            ₹{paymentResult.rewards.finalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </>
                 )}
                 <div className="flex justify-between text-sm mb-2">
                   <span>Cashback Earned</span>
