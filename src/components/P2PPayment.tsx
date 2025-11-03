@@ -47,13 +47,18 @@ export const P2PPayment = () => {
         console.error('Error parsing scanned recipient:', error);
       }
     }
-    
+  }, []);
+
+  useEffect(() => {
+    // Cleanup scanner on unmount
     return () => {
       if (html5QrCode && isScanning) {
-        html5QrCode.stop().catch(console.error);
+        html5QrCode.stop().catch((err) => {
+          console.log('Scanner cleanup:', err.message);
+        });
       }
     };
-  }, [html5QrCode, isScanning]);
+  }, []);
 
   const validateIdentifier = (value: string) => {
     const mobileRegex = /^[6-9]\d{9}$/;
@@ -147,7 +152,11 @@ export const P2PPayment = () => {
 
   const stopQRScanner = async () => {
     if (html5QrCode && isScanning) {
-      await html5QrCode.stop();
+      try {
+        await html5QrCode.stop();
+      } catch (error: any) {
+        console.log('Stop scanner error:', error.message);
+      }
       setHtml5QrCode(null);
       setIsScanning(false);
     }

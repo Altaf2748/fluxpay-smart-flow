@@ -44,12 +44,18 @@ export const PaymentFlow = () => {
 
   useEffect(() => {
     fetchOffers();
+  }, []);
+
+  useEffect(() => {
+    // Cleanup scanner on unmount
     return () => {
       if (html5QrCode && isScanning) {
-        html5QrCode.stop().catch(console.error);
+        html5QrCode.stop().catch((err) => {
+          console.log('Scanner cleanup:', err.message);
+        });
       }
     };
-  }, [html5QrCode, isScanning]);
+  }, []);
 
   useEffect(() => {
     // Auto-apply a coupon code whenever merchant and offers are available
@@ -295,7 +301,11 @@ export const PaymentFlow = () => {
 
   const stopQRScanner = async () => {
     if (html5QrCode && isScanning) {
-      await html5QrCode.stop();
+      try {
+        await html5QrCode.stop();
+      } catch (error: any) {
+        console.log('Stop scanner error:', error.message);
+      }
       setHtml5QrCode(null);
       setIsScanning(false);
     }
