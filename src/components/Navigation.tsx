@@ -71,9 +71,7 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
-          <div className="flex-shrink-0 font-bold text-lg sm:text-xl text-primary">
-            FluxPay
-          </div>
+          
 
           {/* Nav Items - Horizontal Scroll on Mobile */}
           <div className="flex-1 mx-4 overflow-x-auto no-scrollbar">
