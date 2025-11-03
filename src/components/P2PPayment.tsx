@@ -33,6 +33,21 @@ export const P2PPayment = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if there's a scanned recipient from QR code
+    const scannedData = sessionStorage.getItem('scannedRecipient');
+    if (scannedData) {
+      try {
+        const recipient = JSON.parse(scannedData);
+        setIdentifier(recipient.phone);
+        // Auto-resolve the contact
+        resolveContactByPhone(recipient.phone);
+        // Clear the session storage
+        sessionStorage.removeItem('scannedRecipient');
+      } catch (error) {
+        console.error('Error parsing scanned recipient:', error);
+      }
+    }
+    
     return () => {
       if (html5QrCode && isScanning) {
         html5QrCode.stop().catch(console.error);

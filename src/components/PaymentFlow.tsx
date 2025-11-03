@@ -233,15 +233,30 @@ export const PaymentFlow = () => {
               setHtml5QrCode(null);
               
               if (mode === 'p2p') {
-                // Set merchant as the user's name from QR
+                // Store the scanned data and target tab for P2P payment
+                sessionStorage.setItem('scannedRecipient', JSON.stringify({
+                  phone: qrData.phone,
+                  name: qrData.name
+                }));
+                sessionStorage.setItem('targetTab', 'p2p');
+                
+                toast({
+                  title: "QR Code Scanned",
+                  description: `Redirecting to send money to ${qrData.name || qrData.phone}`,
+                });
+                
+                // Reload page to trigger tab change
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 1000);
+              } else {
+                // For merchant mode, set the merchant name
                 setMerchant(qrData.name || qrData.phone);
-                setScanMode('merchant');
+                toast({
+                  title: "QR Code Scanned",
+                  description: `Merchant: ${qrData.name || qrData.phone}`,
+                });
               }
-              
-              toast({
-                title: "QR Code Scanned",
-                description: `Recipient: ${qrData.name || qrData.phone}`,
-              });
             } else {
               toast({
                 title: "Invalid QR Code",
@@ -290,15 +305,11 @@ export const PaymentFlow = () => {
     setShowMpinDialog(false);
     setPaymentLoading(true);
 
-    // Get both original and final amounts
-    const { original: originalAmount, final: finalAmount } = calculateDiscountedAmount();
-    
-    // Store the final paid amount for display
-    setPaidAmount(finalAmount);
+    // Get original amount (before discount)
+    const originalAmount = parseFloat(amount);
     
     // Validate amount before proceeding
-    const amountToValidate = originalAmount || parseFloat(amount);
-    if (!amountToValidate || amountToValidate <= 0 || isNaN(amountToValidate)) {
+    if (!originalAmount || originalAmount <= 0 || isNaN(originalAmount)) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid payment amount",
@@ -320,11 +331,11 @@ export const PaymentFlow = () => {
     }
 
     try {
-      // Send ORIGINAL amount to backend - let backend apply discount
+      // Send ORIGINAL amount to backend - backend will apply discount
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
           merchant,
-          amount: originalAmount || parseFloat(amount),
+          amount: originalAmount,
           rail: selectedMethod,
           mpin,
           couponCode: validCouponCode
@@ -337,14 +348,13 @@ export const PaymentFlow = () => {
       setPaymentComplete(true);
 
       if (data.success) {
-        // Update paid amount with actual transaction amount
-        if (data.transaction?.amount) {
-          setPaidAmount(data.transaction.amount);
-        }
+        // Store the actual paid amount from backend
+        const actualPaidAmount = data.rewards?.finalAmount || data.transaction?.amount || originalAmount;
+        setPaidAmount(actualPaidAmount);
         
         toast({
           title: "Payment Successful!",
-          description: `₹${data.transaction?.amount?.toFixed(2) || finalAmount.toFixed(2)} paid to ${merchant}`,
+          description: `₹${actualPaidAmount.toFixed(2)} paid to ${merchant}`,
         });
         // Trigger a storage event to refresh balance across components
         window.dispatchEvent(new Event('balance-updated'));

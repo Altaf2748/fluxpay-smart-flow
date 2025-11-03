@@ -18,6 +18,15 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user } = useAuth();
 
+  React.useEffect(() => {
+    // Check if there's a target tab from QR scan
+    const targetTab = sessionStorage.getItem('targetTab');
+    if (targetTab) {
+      setActiveTab(targetTab);
+      sessionStorage.removeItem('targetTab');
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
