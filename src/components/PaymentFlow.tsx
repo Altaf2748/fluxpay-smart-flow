@@ -195,41 +195,31 @@ export const PaymentFlow = () => {
   const startQRScanner = async (mode: 'merchant' | 'p2p') => {
     try {
       setScanMode(mode);
-      setIsScanning(true);
       
       // Check if browser supports camera access
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
           title: "Camera Not Supported",
-          description: "Your browser doesn't support camera access",
+          description: "Your browser doesn't support camera access. Please use a modern browser.",
           variant: "destructive",
         });
-        setIsScanning(false);
         return;
       }
 
-      // Request camera permission first
-      try {
-        await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      } catch (permError: any) {
-        toast({
-          title: "Camera Permission Denied",
-          description: "Please allow camera access in your browser settings to scan QR codes",
-          variant: "destructive",
-        });
-        setIsScanning(false);
-        return;
-      }
-
+      setIsScanning(true);
       const qrCode = new Html5Qrcode("qr-reader-payment");
       setHtml5QrCode(qrCode);
 
+      // Start scanner with better mobile support
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      };
+
       await qrCode.start(
         { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
+        config,
         async (decodedText) => {
           try {
             const qrData = JSON.parse(decodedText);
@@ -281,21 +271,28 @@ export const PaymentFlow = () => {
     } catch (error: any) {
       console.error('Failed to start scanner:', error);
       
-      let errorMessage = "Could not access camera. Please grant permission in your browser settings.";
-      if (error?.name === 'NotAllowedError') {
-        errorMessage = "Camera permission denied. Please allow camera access and try again.";
+      let errorTitle = "Camera Error";
+      let errorMessage = "Could not access camera. Please try again.";
+      
+      if (error?.name === 'NotAllowedError' || error?.message?.includes('Permission')) {
+        errorTitle = "Permission Required";
+        errorMessage = "Please allow camera access in your browser settings. On iPhone: Settings > Safari > Camera. On Android: Browser > Settings > Site Settings > Camera.";
       } else if (error?.name === 'NotFoundError') {
         errorMessage = "No camera found on this device.";
       } else if (error?.name === 'NotReadableError') {
-        errorMessage = "Camera is being used by another application.";
+        errorMessage = "Camera is being used by another application. Please close other apps and try again.";
+      } else if (error?.name === 'NotSupportedError' || error?.message?.includes('secure')) {
+        errorMessage = "Camera requires HTTPS connection. Please access the app via a secure connection.";
       }
       
       toast({
-        title: "Camera Error",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
+        duration: 6000,
       });
       setIsScanning(false);
+      setHtml5QrCode(null);
     }
   };
 
