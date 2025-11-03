@@ -73,6 +73,7 @@ export const PaymentFlow = () => {
       }
 
       if (matchingOffer) {
+        console.log('Auto-applying offer:', matchingOffer);
         setCouponCode(matchingOffer.redeem_code);
         setAppliedOffer(matchingOffer);
       }
@@ -86,6 +87,7 @@ export const PaymentFlow = () => {
     try {
       const { data, error } = await supabase.functions.invoke('get-offers');
       if (error) throw error;
+      console.log('Fetched offers:', data?.offers);
       setAvailableOffers(data?.offers || []);
     } catch (error) {
       console.error('Error fetching offers:', error);
@@ -177,8 +179,14 @@ export const PaymentFlow = () => {
       return { original: originalAmount, discount: 0, final: originalAmount, discountPercent: 0 };
     }
     
-    // Use the reward_percent from the applied offer instead of random
+    // Use the reward_percent from the applied offer
     const discountPercent = appliedOffer.reward_percent || 0;
+    
+    console.log('Calculating discount:', {
+      originalAmount,
+      discountPercent,
+      appliedOffer: appliedOffer.title
+    });
     
     // Calculate discount amount and final amount
     const discountAmount = originalAmount * discountPercent;

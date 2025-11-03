@@ -31,13 +31,12 @@ serve(async (req) => {
       })
     }
 
-    // Fetch active offers from database
+    // Fetch active offers from database - always available
     const { data: offers, error: offersError } = await supabaseClient
       .from('offers')
       .select('*')
       .eq('active', true)
-      .gte('valid_to', new Date().toISOString())
-      .order('created_at', { ascending: false })
+      .order('reward_percent', { ascending: false })
 
     if (offersError) {
       console.error('Error fetching offers:', offersError)
@@ -57,7 +56,8 @@ serve(async (req) => {
       maxCashback: Math.round(offer.reward_percent * 1000),
       category: offer.mcc,
       rail: 'UPI',
-      redeemCode: offer.redeem_code
+      redeem_code: offer.redeem_code,
+      reward_percent: offer.reward_percent // CRITICAL: Include for discount calculation
     }))
 
     console.log(`Fetched ${activeOffers.length} active offers for user ${user.id}`)
