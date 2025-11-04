@@ -77,7 +77,12 @@ export const P2PPayment = () => {
         return;
       }
 
+      // Set scanning state first, then wait for next frame to ensure DOM is ready
       setIsScanning(true);
+      
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const qrCode = new Html5Qrcode("qr-reader");
       setHtml5QrCode(qrCode);
 
@@ -354,30 +359,29 @@ export const P2PPayment = () => {
                   </TabsContent>
 
                   <TabsContent value="scan" className="space-y-4">
+                    <div className="text-center text-muted-foreground text-sm mb-4">
+                      Scan a FluxPay QR code to send money instantly
+                    </div>
+                    
+                    {/* Always render the QR reader div for camera access */}
+                    <div id="qr-reader" className={`w-full rounded-lg overflow-hidden border-2 border-primary ${isScanning ? 'block' : 'hidden'}`}></div>
+                    
                     {!isScanning ? (
-                      <div className="space-y-4">
-                        <div className="text-center text-muted-foreground text-sm">
-                          Scan a FluxPay QR code to send money instantly
-                        </div>
-                        <Button 
-                          onClick={startQRScanner} 
-                          className="w-full"
-                        >
-                          <QrCode className="w-4 h-4 mr-2" />
-                          Start Camera
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={startQRScanner} 
+                        className="w-full"
+                      >
+                        <QrCode className="w-4 h-4 mr-2" />
+                        Start Camera
+                      </Button>
                     ) : (
-                      <div className="space-y-4">
-                        <div id="qr-reader" className="w-full rounded-lg overflow-hidden border-2 border-primary"></div>
-                        <Button 
-                          onClick={stopQRScanner} 
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Cancel Scan
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={stopQRScanner} 
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Cancel Scan
+                      </Button>
                     )}
                   </TabsContent>
                 </Tabs>

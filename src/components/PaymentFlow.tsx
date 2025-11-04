@@ -180,17 +180,26 @@ export const PaymentFlow = () => {
     }
     
     // Use the reward_percent from the applied offer
+    // reward_percent should be a decimal (e.g., 0.15 for 15%)
     const discountPercent = appliedOffer.reward_percent || 0;
     
     console.log('Calculating discount:', {
       originalAmount,
       discountPercent,
-      appliedOffer: appliedOffer.title
+      'discountPercent (as percentage)': (discountPercent * 100) + '%',
+      appliedOffer: appliedOffer.title,
+      'full offer': appliedOffer
     });
     
     // Calculate discount amount and final amount
     const discountAmount = originalAmount * discountPercent;
     const finalAmount = originalAmount - discountAmount;
+    
+    console.log('Discount result:', {
+      discountAmount,
+      finalAmount,
+      'savings': discountAmount
+    });
     
     return {
       original: originalAmount,
@@ -214,7 +223,12 @@ export const PaymentFlow = () => {
         return;
       }
 
+      // Set scanning state first, then wait for next frame to ensure DOM is ready
       setIsScanning(true);
+      
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const qrCode = new Html5Qrcode("qr-reader-payment");
       setHtml5QrCode(qrCode);
 
@@ -568,30 +582,29 @@ export const PaymentFlow = () => {
             </TabsContent>
 
             <TabsContent value="scan" className="space-y-4">
+              <div className="text-center text-muted-foreground text-sm mb-4">
+                Scan a FluxPay user QR code to pay them instantly
+              </div>
+              
+              {/* Always render the QR reader div for camera access */}
+              <div id="qr-reader-payment" className={`w-full rounded-lg overflow-hidden border-2 border-primary ${isScanning ? 'block' : 'hidden'}`}></div>
+              
               {!isScanning ? (
-                <div className="space-y-4">
-                  <div className="text-center text-muted-foreground text-sm">
-                    Scan a FluxPay user QR code to pay them instantly
-                  </div>
-                  <Button 
-                    onClick={() => startQRScanner('p2p')} 
-                    className="w-full h-11 sm:h-12"
-                  >
-                    <QrCode className="w-4 h-4 mr-2" />
-                    Start Camera
-                  </Button>
-                </div>
+                <Button 
+                  onClick={() => startQRScanner('p2p')} 
+                  className="w-full h-11 sm:h-12"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Start Camera
+                </Button>
               ) : (
-                <div className="space-y-4">
-                  <div id="qr-reader-payment" className="w-full rounded-lg overflow-hidden border-2 border-primary"></div>
-                  <Button 
-                    onClick={stopQRScanner} 
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Cancel Scan
-                  </Button>
-                </div>
+                <Button 
+                  onClick={stopQRScanner} 
+                  variant="outline"
+                  className="w-full"
+                >
+                  Cancel Scan
+                </Button>
               )}
             </TabsContent>
           </Tabs>
