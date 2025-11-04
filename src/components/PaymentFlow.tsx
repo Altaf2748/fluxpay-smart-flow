@@ -243,9 +243,14 @@ export const PaymentFlow = () => {
         { facingMode: "environment" },
         config,
         async (decodedText) => {
+          console.log('QR Code detected:', decodedText);
+          
           try {
+            // Try to parse as JSON first
             const qrData = JSON.parse(decodedText);
+            
             if (qrData.type === 'fluxpay' && qrData.phone) {
+              // Stop scanner immediately on successful scan
               await qrCode.stop();
               setIsScanning(false);
               setHtml5QrCode(null);
@@ -276,18 +281,37 @@ export const PaymentFlow = () => {
                 });
               }
             } else {
+              // Invalid FluxPay QR code format
+              console.log('Invalid FluxPay QR format:', qrData);
               toast({
                 title: "Invalid QR Code",
                 description: "This is not a valid FluxPay QR code",
                 variant: "destructive",
               });
             }
-          } catch (error) {
-            console.error('QR scan error:', error);
+          } catch (parseError) {
+            // Not a JSON QR code or invalid JSON
+            console.log('QR parse error:', parseError);
+            console.log('Raw QR text:', decodedText);
+            
+            // Check if it's a UPI QR code or other format
+            if (decodedText.startsWith('upi://')) {
+              toast({
+                title: "UPI QR Detected",
+                description: "This is a UPI QR code. Please use a FluxPay QR code for payments.",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Unsupported QR Code",
+                description: "Please scan a valid FluxPay QR code",
+                variant: "destructive",
+              });
+            }
           }
         },
         (errorMessage) => {
-          console.log('QR scan ongoing...');
+          // This is called continuously while scanning - no need to log every frame
         }
       );
     } catch (error: any) {
