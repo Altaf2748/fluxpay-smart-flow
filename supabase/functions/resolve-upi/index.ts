@@ -12,19 +12,52 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    )
-
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    // Check for Authorization header
+    const authHeader = req.headers.get('Authorization')
+    console.log('Authorization header present:', !!authHeader)
+    
+    if (!authHeader) {
+      console.error('Missing Authorization header')
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized',
+        message: 'Authentication required. Please log in and try again.'
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    
+    if (userError) {
+      console.error('Auth error:', userError.message)
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized',
+        message: 'Invalid or expired session. Please log in again.'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    
+    if (!user) {
+      console.error('No user found in session')
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized',
+        message: 'No active session. Please log in.'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    
+    console.log('User authenticated:', user.id)
 
     const { identifier } = await req.json()
 

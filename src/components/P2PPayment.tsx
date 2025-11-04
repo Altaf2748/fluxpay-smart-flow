@@ -207,9 +207,33 @@ export const P2PPayment = () => {
         body: { identifier: phone }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('resolve-upi error:', error);
+        
+        // Handle authentication errors specifically
+        if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+          toast({
+            title: "Authentication Required",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        throw error;
+      }
 
       if (data.error) {
+        // Handle specific error responses from the edge function
+        if (data.message?.includes('Authentication') || data.message?.includes('session')) {
+          toast({
+            title: "Authentication Required",
+            description: data.message,
+            variant: "destructive",
+          });
+          return;
+        }
+        
         toast({
           title: "User Not Found",
           description: data.message || "No registered user found with this phone number",
