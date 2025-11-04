@@ -32,17 +32,62 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        // Handle different auth events
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        } else if (event === 'SIGNED_IN') {
+          console.log('User signed in');
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session and validate it
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      if (session) {
+        // Validate the session by trying to get the user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error('Session invalid, clearing:', userError?.message);
+          // Session is invalid, clear it
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          console.log('Valid session found for user:', user.id);
+          setSession(session);
+          setUser(user);
+        }
+      } else {
+        setSession(null);
+        setUser(null);
+      }
+      
       setLoading(false);
     });
 

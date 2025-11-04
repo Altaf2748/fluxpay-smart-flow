@@ -210,27 +210,35 @@ export const P2PPayment = () => {
       if (error) {
         console.error('resolve-upi error:', error);
         
-        // Handle authentication errors specifically
+        // Handle authentication errors - redirect to login
         if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
           toast({
-            title: "Authentication Required",
-            description: "Your session has expired. Please log in again.",
+            title: "Session Expired",
+            description: "Please log in again to continue.",
             variant: "destructive",
           });
+          
+          // Sign out and redirect to login
+          await supabase.auth.signOut();
+          window.location.href = '/auth';
           return;
         }
         
         throw error;
       }
 
-      if (data.error) {
+      if (data?.error) {
         // Handle specific error responses from the edge function
-        if (data.message?.includes('Authentication') || data.message?.includes('session')) {
+        if (data.message?.includes('session') || data.message?.includes('expired')) {
           toast({
-            title: "Authentication Required",
-            description: data.message,
+            title: "Session Expired",
+            description: "Please log in again to continue.",
             variant: "destructive",
           });
+          
+          // Sign out and redirect to login
+          await supabase.auth.signOut();
+          window.location.href = '/auth';
           return;
         }
         
