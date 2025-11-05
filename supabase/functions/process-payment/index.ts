@@ -158,7 +158,6 @@ serve(async (req) => {
         .select('*')
         .eq('redeem_code', couponCode.trim())
         .eq('active', true)
-        .gte('valid_to', new Date().toISOString())
         .single()
 
       if (offerError || !offer) {
