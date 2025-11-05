@@ -302,8 +302,8 @@ async function mockNPCICollect(amount: number) {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
   
-  // 90% success rate for demo
-  const success = Math.random() > 0.1
+  // Always succeed for demo
+  const success = true
   
   return {
     success,
@@ -318,8 +318,8 @@ async function mockCardAuth(amount: number) {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000))
   
-  // 95% success rate for demo
-  const success = Math.random() > 0.05
+  // Always succeed for demo
+  const success = true
   
   return {
     success,
