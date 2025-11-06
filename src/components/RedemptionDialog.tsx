@@ -47,19 +47,48 @@ export const RedemptionDialog = ({ availablePoints, onClose, onSuccess }: Redemp
       if (!user) throw new Error('Not authenticated');
 
       // Create a redemption transaction
-      const { error } = await supabase
+      const { error: txnError } = await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
           merchant: 'Points Redemption',
-          amount: -cashValue,
+          amount: cashValue,
           rail: 'REDEMPTION',
           status: 'success',
           reward_amount: -pointsToRedeem,
           transaction_ref: `RED${Date.now()}`
         });
 
-      if (error) throw error;
+      if (txnError) throw txnError;
+
+      // Get current balance
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Update user balance
+      const newBalance = Number(profile.balance) + cashValue;
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('user_id', user.id);
+
+      if (balanceError) throw balanceError;
+
+      // Record the point deduction in rewards ledger
+      const { error: rewardsError } = await supabase
+        .from('rewards_ledger')
+        .insert({
+          user_id: user.id,
+          cashback: 0,
+          points: -pointsToRedeem
+        });
+
+      if (rewardsError) throw rewardsError;
 
       setSuccess(true);
       toast({
