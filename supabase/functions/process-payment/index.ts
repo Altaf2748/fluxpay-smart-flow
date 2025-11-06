@@ -171,13 +171,29 @@ serve(async (req) => {
         })
       }
 
+      // Extract brand name from offer title (e.g., "Amazon Sale - 20% Cashback" -> "Amazon")
+      const offerBrand = offer.title.split(' ')[0].toLowerCase()
+      const paymentMerchant = merchant.toLowerCase()
+
+      // Validate that the coupon is for this specific merchant/brand
+      if (!paymentMerchant.includes(offerBrand)) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Invalid coupon for this merchant',
+          message: `This coupon code is only valid for ${offer.title.split(' ')[0]} purchases, not ${merchant}`
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       // Apply discount to payment amount
       rewardPercent = offer.reward_percent
       discountAmount = parseFloat(amount) * rewardPercent
       finalPaymentAmount = parseFloat(amount) - discountAmount
       couponApplied = true
       appliedOffer = offer
-      console.log(`Coupon ${couponCode} applied: ${offer.reward_percent * 100}% discount = ₹${discountAmount}, final amount = ₹${finalPaymentAmount}`)
+      console.log(`Coupon ${couponCode} applied to ${merchant}: ${offer.reward_percent * 100}% discount = ₹${discountAmount}, final amount = ₹${finalPaymentAmount}`)
     }
 
     // Check balance against final payment amount
