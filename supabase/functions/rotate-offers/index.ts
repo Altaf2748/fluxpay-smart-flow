@@ -106,22 +106,6 @@ serve(async (req) => {
 
     console.log('Starting offer rotation...')
 
-    // First, check if offers exist with these codes
-    const generateCouponCode = (title: string, rewardPercent: number) => {
-      const merchantName = title.split(' ')[0].toUpperCase()
-      const percent = Math.round(rewardPercent * 100)
-      return `${merchantName}${percent}`
-    }
-
-    const redeemCodes = brandOffers.map(offer => generateCouponCode(offer.title, offer.reward_percent))
-    
-    const { data: existingOffers } = await supabaseAdmin
-      .from('offers')
-      .select('redeem_code')
-      .in('redeem_code', redeemCodes)
-
-    const existingCodes = new Set(existingOffers?.map(o => o.redeem_code) || [])
-
     // Deactivate all existing offers
     const { error: deactivateError } = await supabaseAdmin
       .from('offers')
@@ -137,76 +121,46 @@ serve(async (req) => {
     const shuffled = [...brandOffers].sort(() => 0.5 - Math.random())
     const selectedOffers = shuffled.slice(0, 5)
 
+    // Insert new offers with validity of 24 hours
     const now = new Date()
     const validUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
-    // Separate into existing and new offers
-    const offersToUpdate: string[] = []
-    const offersToInsert: any[] = []
-
-    selectedOffers.forEach(offer => {
-      const redeemCode = generateCouponCode(offer.title, offer.reward_percent)
-      
-      if (existingCodes.has(redeemCode)) {
-        offersToUpdate.push(redeemCode)
-      } else {
-        offersToInsert.push({
-          title: offer.title,
-          description: offer.description,
-          mcc: offer.mcc,
-          reward_percent: offer.reward_percent,
-          terms: offer.terms,
-          valid_from: now.toISOString(),
-          valid_to: validUntil.toISOString(),
-          active: true,
-          redeem_code: redeemCode
-        })
-      }
-    })
-
-    let activatedCount = 0
-
-    // Update existing offers to active
-    if (offersToUpdate.length > 0) {
-      const { error: updateError } = await supabaseAdmin
-        .from('offers')
-        .update({ 
-          active: true,
-          valid_from: now.toISOString(),
-          valid_to: validUntil.toISOString()
-        })
-        .in('redeem_code', offersToUpdate)
-
-      if (updateError) {
-        console.error('Error updating offers:', updateError)
-      } else {
-        activatedCount += offersToUpdate.length
-        console.log(`Activated ${offersToUpdate.length} existing offers`)
-      }
+    // Generate coupon codes based on merchant name and reward percent
+    const generateCouponCode = (title: string, rewardPercent: number) => {
+      const merchantName = title.split(' ')[0].toUpperCase()
+      const percent = Math.round(rewardPercent * 100)
+      return `${merchantName}${percent}`
     }
 
-    // Insert new offers
-    if (offersToInsert.length > 0) {
-      const { data: newOffers, error: insertError } = await supabaseAdmin
-        .from('offers')
-        .insert(offersToInsert)
-        .select()
+    const offersToInsert = selectedOffers.map(offer => ({
+      title: offer.title,
+      description: offer.description,
+      mcc: offer.mcc,
+      reward_percent: offer.reward_percent,
+      terms: offer.terms,
+      valid_from: now.toISOString(),
+      valid_to: validUntil.toISOString(),
+      active: true,
+      redeem_code: generateCouponCode(offer.title, offer.reward_percent)
+    }))
 
-      if (insertError) {
-        console.error('Error inserting offers:', insertError)
-      } else {
-        activatedCount += newOffers?.length || 0
-        console.log(`Inserted ${newOffers?.length} new offers`)
-      }
+    const { data: newOffers, error: insertError } = await supabaseAdmin
+      .from('offers')
+      .insert(offersToInsert)
+      .select()
+
+    if (insertError) {
+      console.error('Error inserting offers:', insertError)
+      throw insertError
     }
 
-    console.log(`Successfully rotated offers. ${activatedCount} offers activated.`)
+    console.log(`Successfully rotated offers. ${newOffers?.length} new offers activated.`)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Rotated ${activatedCount} offers`,
-        count: activatedCount
+        message: `Rotated ${newOffers?.length} offers`,
+        offers: newOffers 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
