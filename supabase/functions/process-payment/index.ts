@@ -171,6 +171,22 @@ serve(async (req) => {
         })
       }
 
+      // Extract brand name from offer title (first word)
+      const brandName = offer.title.split(' ')[0].toLowerCase()
+      const merchantLower = merchant.toLowerCase()
+
+      // Verify merchant matches the offer's brand
+      if (!merchantLower.includes(brandName)) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Invalid merchant',
+          message: `This coupon is only valid for ${offer.title.split(' ')[0]} purchases`
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       // Apply discount to payment amount
       rewardPercent = offer.reward_percent
       discountAmount = parseFloat(amount) * rewardPercent
