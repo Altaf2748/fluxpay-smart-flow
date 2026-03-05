@@ -34,6 +34,17 @@ serve(async (req) => {
 
     const { merchant, amount, rail, mpin, couponCode } = await req.json()
 
+    if (typeof amount !== 'number' || amount <= 0 || amount > 100000) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Invalid amount',
+        message: 'Amount must be between ₹1 and ₹1,00,000.'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     if (!mpin) {
       return new Response(JSON.stringify({ 
         success: false,

@@ -67,6 +67,15 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate: require a shared secret header
+    const rotateSecret = req.headers.get('x-rotate-secret')
+    if (rotateSecret !== Deno.env.get('ROTATE_OFFERS_SECRET')) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
