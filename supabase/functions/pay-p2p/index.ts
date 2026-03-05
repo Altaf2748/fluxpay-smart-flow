@@ -36,6 +36,13 @@ serve(async (req) => {
       })
     }
 
+    if (typeof amount !== 'number' || amount <= 0 || amount > 100000) {
+      return new Response(JSON.stringify({ error: 'Invalid amount. Must be between ₹1 and ₹1,00,000.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Get sender profile
     const { data: senderProfile, error: senderError } = await supabaseClient
       .from('profiles')
