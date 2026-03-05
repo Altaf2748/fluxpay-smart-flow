@@ -115,9 +115,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
 
           if (isReceived) {
             const { data: senderProfile } = await supabase
-              .from('profiles')
-              .select('first_name, last_name')
-              .eq('user_id', txn.user_id)
+              .rpc('get_user_display_name', { target_user_id: txn.user_id })
               .single();
             
             if (senderProfile) {

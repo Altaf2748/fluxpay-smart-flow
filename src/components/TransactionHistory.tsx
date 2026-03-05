@@ -38,9 +38,7 @@ export const TransactionHistory = () => {
         (data || []).map(async (txn: any) => {
           if (txn.recipient_id === user.id && txn.transaction_type === 'p2p') {
             const { data: senderProfile } = await supabase
-              .from('profiles')
-              .select('first_name, last_name')
-              .eq('user_id', txn.user_id)
+              .rpc('get_user_display_name', { target_user_id: txn.user_id })
               .single();
 
             if (senderProfile) {
