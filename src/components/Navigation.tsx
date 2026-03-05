@@ -11,10 +11,13 @@ import {
   Star,
   User as UserIcon,
   MessageSquare,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface NavigationProps {
   activeTab: string;
@@ -23,6 +26,8 @@ interface NavigationProps {
 
 export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
+  const navigate = useNavigate();
   const [userName, setUserName] = useState('User');
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -101,8 +106,19 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
 
           {/* User Badge */}
           {user && (
-            <div className="flex-shrink-0 text-xs sm:text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
-              {userName}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {isAdmin && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="text-xs sm:text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded-md hover:bg-primary/20 transition-colors"
+                >
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                  Admin
+                </button>
+              )}
+              <div className="text-xs sm:text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                {userName}
+              </div>
             </div>
           )}
         </div>

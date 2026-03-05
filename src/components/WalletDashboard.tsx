@@ -22,7 +22,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
 }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [userName, setUserName] = useState('User');
-  const [balances, setBalances] = useState({ upiBalance: 0, cardBalance: 0, cardCreditLimit: 0 });
+  const [balances, setBalances] = useState<{ upiBalance: number | null; cardBalance: number | null; cardCreditLimit: number }>({ upiBalance: null, cardBalance: null, cardCreditLimit: 0 });
   const [loading, setLoading] = useState(true);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -76,9 +76,11 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
 
       if (profile) {
         setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
+        const upiVal = profile.balance;
+        const cardVal = profile.card_balance;
         setBalances({
-          upiBalance: profile.balance || 0,
-          cardBalance: profile.card_balance || 0,
+          upiBalance: upiVal,
+          cardBalance: cardVal,
           cardCreditLimit: 0
         });
       }
