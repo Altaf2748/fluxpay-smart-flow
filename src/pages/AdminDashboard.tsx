@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Shield, Users, Gift, Plus, Trash2, Edit, ArrowLeft, UserPlus } from 'lucide-react';
+import { Shield, Users, Gift, Plus, Trash2, Edit, ArrowLeft, UserPlus, KeyRound, ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -44,14 +44,64 @@ const AdminDashboard = () => {
   // Admin management
   const [adminEmail, setAdminEmail] = useState('');
   const [admins, setAdmins] = useState<any[]>([]);
+  const [adminRequests, setAdminRequests] = useState<any[]>([]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
       fetchOffers();
       fetchAdmins();
+      fetchAdminRequests();
     }
   }, [isAdmin]);
+
+  const fetchAdminRequests = async () => {
+    const { data } = await supabase
+      .from('admin_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const enriched = await Promise.all(
+        data.map(async (r: any) => {
+          const { data: profile } = await supabase.rpc('get_user_display_name', { target_user_id: r.user_id }).single();
+          return { ...r, user_name: profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown' };
+        })
+      );
+      setAdminRequests(enriched);
+    }
+  };
+
+  const handleApproveRequest = async (request: any) => {
+    const updates: any = { status: 'approved', admin_notes: 'Approved by admin', updated_at: new Date().toISOString() };
+    const { error } = await supabase.from('admin_requests').update(updates).eq('id', request.id);
+
+    if (request.request_type === 'ekyc_verification' && !error) {
+      await supabase.from('profiles').update({ kyc_status: 'verified' }).eq('user_id', request.user_id);
+    }
+
+    if (!error) {
+      toast({ title: 'Request Approved' });
+      fetchAdminRequests();
+      fetchUsers();
+    }
+  };
+
+  const handleRejectRequest = async (request: any) => {
+    const { error } = await supabase.from('admin_requests').update({
+      status: 'rejected', admin_notes: 'Rejected by admin', updated_at: new Date().toISOString()
+    }).eq('id', request.id);
+
+    if (request.request_type === 'ekyc_verification' && !error) {
+      await supabase.from('profiles').update({ kyc_status: 'rejected' }).eq('user_id', request.user_id);
+    }
+
+    if (!error) {
+      toast({ title: 'Request Rejected' });
+      fetchAdminRequests();
+      fetchUsers();
+    }
+  };
 
   const fetchUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -237,6 +287,7 @@ const AdminDashboard = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Users</TabsTrigger>
             <TabsTrigger value="offers"><Gift className="w-4 h-4 mr-1" /> Offers</TabsTrigger>
+            <TabsTrigger value="requests"><KeyRound className="w-4 h-4 mr-1" /> Requests {adminRequests.filter(r => r.status === 'pending').length > 0 && <Badge variant="destructive" className="ml-1 text-xs">{adminRequests.filter(r => r.status === 'pending').length}</Badge>}</TabsTrigger>
             <TabsTrigger value="admins"><Shield className="w-4 h-4 mr-1" /> Admins</TabsTrigger>
           </TabsList>
 
@@ -353,6 +404,63 @@ const AdminDashboard = () => {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* REQUESTS TAB */}
+          <TabsContent value="requests">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Requests ({adminRequests.filter(r => r.status === 'pending').length} pending)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminRequests.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{r.user_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {r.request_type === 'password_reset' ? 'Password Reset' : 'eKYC Verification'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm max-w-[200px] truncate">{r.message || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={r.status === 'approved' ? 'default' : r.status === 'rejected' ? 'destructive' : 'secondary'}>
+                            {r.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {r.status === 'pending' && (
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="ghost" className="text-green-600" onClick={() => handleApproveRequest(r)}>
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleRejectRequest(r)}>
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {adminRequests.length === 0 && (
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No requests yet</TableCell></TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>

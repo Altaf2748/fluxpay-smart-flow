@@ -169,51 +169,61 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Main Balance */}
-        <Card className="md:col-span-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white border-0">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-blue-100 text-sm font-medium">Total Balance</CardTitle>
-                <div className="flex items-center mt-2">
-                  <span className="text-3xl font-bold">
-                    {loading ? '₹***,***' : balanceVisible ? `₹${(balances.upiBalance + balances.cardBalance).toLocaleString()}` : '₹***,***'}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setBalanceVisible(!balanceVisible)}
-                    className="ml-2 text-white hover:bg-white/20"
-                  >
-                    {balanceVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-              <Badge className="bg-white/20 text-white border-0">Gold Tier</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <Smartphone className="w-5 h-5" />
-                </div>
+        {balances.upiBalance === null && balances.cardBalance === null ? (
+          <Card className="md:col-span-2 border-dashed border-2 border-yellow-400 bg-yellow-50">
+            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+              <Zap className="w-10 h-10 text-yellow-500 mb-3" />
+              <h3 className="text-lg font-semibold text-yellow-800 mb-1">Account Not Activated</h3>
+              <p className="text-sm text-yellow-700">Your wallet balance hasn't been set yet. Please contact your admin to activate your account.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="md:col-span-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white border-0">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-blue-100 text-sm">UPI Balance</p>
-                  <p className="font-semibold">{loading ? '₹••••' : `₹${balances.upiBalance.toLocaleString()}`}</p>
+                  <CardTitle className="text-blue-100 text-sm font-medium">Total Balance</CardTitle>
+                  <div className="flex items-center mt-2">
+                    <span className="text-3xl font-bold">
+                      {loading ? '₹***,***' : balanceVisible ? `₹${((balances.upiBalance || 0) + (balances.cardBalance || 0)).toLocaleString()}` : '₹***,***'}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBalanceVisible(!balanceVisible)}
+                      className="ml-2 text-white hover:bg-white/20"
+                    >
+                      {balanceVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <Badge className="bg-white/20 text-white border-0">Gold Tier</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-blue-100 text-sm">UPI Balance</p>
+                    <p className="font-semibold">{loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-blue-100 text-sm">Card Balance</p>
+                    <p className="font-semibold">{loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-blue-100 text-sm">Card Balance</p>
-                  <p className="font-semibold">{loading ? '₹••••' : `₹${balances.cardBalance.toLocaleString()}`}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Rewards Card */}
         <Card className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white border-0">
