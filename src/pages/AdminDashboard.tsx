@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Shield, Users, Gift, Plus, Trash2, Edit, ArrowLeft, UserPlus, KeyRound, ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, Users, Gift, Plus, Trash2, Edit, ArrowLeft, UserPlus, KeyRound, ShieldCheck, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -22,10 +22,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<any[]>([]);
+  const [userEmails, setUserEmails] = useState<Record<string, string>>({});
   const [offers, setOffers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userTransactions, setUserTransactions] = useState<any[]>([]);
+  const [viewingUser, setViewingUser] = useState<any>(null);
 
   // Balance setting
   const [balanceDialog, setBalanceDialog] = useState(false);
@@ -106,6 +108,27 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     setUsers(data || []);
+
+    // Fetch emails via edge function
+    const { data: emailData } = await supabase.functions.invoke('admin-lookup-user', {
+      body: { action: 'list_emails' }
+    });
+    if (emailData?.emails) setUserEmails(emailData.emails);
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    if (!confirm(`Are you sure you want to delete ${u.first_name || ''} ${u.last_name || ''}? This action is irreversible.`)) return;
+
+    const { data, error } = await supabase.functions.invoke('admin-lookup-user', {
+      body: { action: 'delete_user', user_id: u.user_id }
+    });
+
+    if (error || !data?.success) {
+      toast({ title: 'Error', description: error?.message || 'Failed to delete user', variant: 'destructive' });
+    } else {
+      toast({ title: 'User Deleted', description: `${u.first_name || 'User'} has been removed.` });
+      fetchUsers();
+    }
   };
 
   const fetchOffers = async () => {
@@ -302,6 +325,7 @@ const AdminDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>UPI Balance</TableHead>
                       <TableHead>Card Balance</TableHead>
@@ -315,6 +339,7 @@ const AdminDashboard = () => {
                         <TableCell className="font-medium">
                           {u.first_name || ''} {u.last_name || ''}
                         </TableCell>
+                        <TableCell className="text-sm">{userEmails[u.user_id] || '—'}</TableCell>
                         <TableCell>{u.phone || '—'}</TableCell>
                         <TableCell>
                           {u.balance !== null ? `₹${Number(u.balance).toLocaleString()}` : <Badge variant="destructive">Not Set</Badge>}
@@ -328,7 +353,10 @@ const AdminDashboard = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
+                            <Button size="sm" variant="outline" onClick={() => setViewingUser(u)}>
+                              <Eye className="w-3 h-3 mr-1" /> View
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => {
                               setBalanceUser(u);
                               setNewUpiBalance(u.balance !== null ? String(u.balance) : '');
@@ -342,6 +370,9 @@ const AdminDashboard = () => {
                               fetchUserTransactions(u.user_id);
                             }}>
                               Transactions
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteUser(u)}>
+                              <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
                         </TableCell>
@@ -581,6 +612,62 @@ const AdminDashboard = () => {
               </TableBody>
             </Table>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View User Details Dialog */}
+      <Dialog open={!!viewingUser} onOpenChange={() => setViewingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>Full profile information</DialogDescription>
+          </DialogHeader>
+          {viewingUser && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">First Name</p>
+                  <p className="font-medium">{viewingUser.first_name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Last Name</p>
+                  <p className="font-medium">{viewingUser.last_name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="font-medium">{userEmails[viewingUser.user_id] || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Phone</p>
+                  <p className="font-medium">{viewingUser.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">UPI Balance</p>
+                  <p className="font-medium">{viewingUser.balance !== null ? `₹${Number(viewingUser.balance).toLocaleString()}` : 'Not Set'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Card Balance</p>
+                  <p className="font-medium">{viewingUser.card_balance !== null ? `₹${Number(viewingUser.card_balance).toLocaleString()}` : 'Not Set'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">KYC Status</p>
+                  <Badge variant={viewingUser.kyc_status === 'verified' ? 'default' : 'secondary'}>{viewingUser.kyc_status || 'pending'}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tier</p>
+                  <p className="font-medium">{viewingUser.tier_status || 'bronze'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">User ID</p>
+                  <p className="font-mono text-xs break-all">{viewingUser.user_id}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Joined</p>
+                  <p className="font-medium">{new Date(viewingUser.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
