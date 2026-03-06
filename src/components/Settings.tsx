@@ -10,6 +10,7 @@ import { MPINSetup } from './MPINSetup';
 import { MPINReset } from './MPINReset';
 import { useAuth } from './AuthProvider';
 import { UserQRCode } from './UserQRCode';
+import { PasswordResetRequest, EKYCSubmission } from './AdminRequests';
 
 export const Settings = () => {
   const { signOut } = useAuth();
@@ -344,6 +345,12 @@ export const Settings = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Password Reset Request & eKYC */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <PasswordResetRequest />
+        <EKYCSubmission />
       </div>
 
       {/* QR Code Section */}
