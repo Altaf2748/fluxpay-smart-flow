@@ -306,6 +306,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      atomic_deduct_balance: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: boolean
+      }
+      atomic_p2p_transfer: {
+        Args: { p_amount: number; p_recipient_id: string; p_sender_id: string }
+        Returns: boolean
+      }
       get_user_display_name: {
         Args: { target_user_id: string }
         Returns: {

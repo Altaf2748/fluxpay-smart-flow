@@ -24,6 +24,8 @@ export const MPINReset = () => {
   const [securityVerified, setSecurityVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  // Store the verified credential to send with reset request
+  const [verifiedCredential, setVerifiedCredential] = useState<{ type: 'pin' | 'otp'; value: string } | null>(null);
   const { toast } = useToast();
 
   const handleSendOTP = async () => {
@@ -47,16 +49,10 @@ export const MPINReset = () => {
   const handleVerifyOTP = async (token: string) => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) throw new Error("No email found");
-
-      const { error } = await supabase.auth.verifyOtp({ email: user.email, token, type: 'email' });
-      if (error) throw error;
-
+      // Don't verify OTP client-side; store the token to send server-side with the reset request
+      setVerifiedCredential({ type: 'otp', value: token });
       setSecurityVerified(true);
-      toast({ title: "Verified", description: "Please enter your new MPIN" });
-    } catch (error: any) {
-      toast({ title: "Invalid OTP", description: error.message || "The OTP is incorrect or expired", variant: "destructive" });
+      toast({ title: "OTP Entered", description: "Please enter your new MPIN. OTP will be verified on the server." });
     } finally {
       setLoading(false);
     }
@@ -69,25 +65,10 @@ export const MPINReset = () => {
       return;
     }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('manage-mpin', {
-        body: { action: 'verify', mpin: currentMpin }
-      });
-
-      if (error) throw error;
-      if (!data?.valid) {
-        toast({ title: "Invalid MPIN", description: data?.message || "Current MPIN is incorrect", variant: "destructive" });
-        return;
-      }
-
-      setSecurityVerified(true);
-      toast({ title: "Verified", description: "Please enter your new MPIN" });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to verify MPIN", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    // Store current MPIN to send server-side with the reset request
+    setVerifiedCredential({ type: 'pin', value: currentMpin });
+    setSecurityVerified(true);
+    toast({ title: "MPIN Entered", description: "Please enter your new MPIN. Verification will happen on the server." });
   };
 
   const handleResetMPIN = async (e: React.FormEvent) => {
@@ -100,12 +81,21 @@ export const MPINReset = () => {
       toast({ title: "MPIN Mismatch", description: "New MPIN and confirmation do not match", variant: "destructive" });
       return;
     }
+    if (!verifiedCredential) {
+      toast({ title: "Error", description: "Verification required before reset", variant: "destructive" });
+      return;
+    }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-mpin', {
-        body: { action: 'reset', newMpin }
-      });
+      const body: Record<string, string> = { action: 'reset', newMpin };
+      if (verifiedCredential.type === 'pin') {
+        body.currentMpin = verifiedCredential.value;
+      } else {
+        body.otpToken = verifiedCredential.value;
+      }
+
+      const { data, error } = await supabase.functions.invoke('manage-mpin', { body });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -128,6 +118,7 @@ export const MPINReset = () => {
     setVerificationMethod(null);
     setOtpSent(false);
     setOtpCode("");
+    setVerifiedCredential(null);
   };
 
   return (

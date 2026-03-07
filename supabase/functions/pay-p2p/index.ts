@@ -142,18 +142,7 @@ serve(async (req) => {
       })
       .eq('user_id', user.id)
 
-    // Check balance
-    if (senderProfile.balance < amount) {
-      return new Response(JSON.stringify({ 
-        error: 'Insufficient balance',
-        message: 'You do not have enough balance for this transaction'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Get recipient profile - use admin client to bypass RLS
+    // Verify recipient exists - use admin client to bypass RLS
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -169,6 +158,24 @@ serve(async (req) => {
       console.error('Recipient not found:', recipientError)
       return new Response(JSON.stringify({ error: 'Recipient not found' }), {
         status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Atomic balance transfer — prevents double-spend race condition
+    const { data: transferSuccess, error: transferError } = await supabaseAdmin
+      .rpc('atomic_p2p_transfer', {
+        p_sender_id: user.id,
+        p_recipient_id: recipientId,
+        p_amount: amount,
+      })
+
+    if (transferError || !transferSuccess) {
+      return new Response(JSON.stringify({ 
+        error: 'Insufficient balance',
+        message: 'You do not have enough balance for this transaction'
+      }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -194,38 +201,16 @@ serve(async (req) => {
 
     if (transactionError) {
       console.error('Transaction error:', transactionError)
+      // Attempt to reverse the balance transfer
+      await supabaseAdmin.rpc('atomic_p2p_transfer', {
+        p_sender_id: recipientId,
+        p_recipient_id: user.id,
+        p_amount: amount,
+      })
       return new Response(JSON.stringify({ error: 'Transaction failed' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
-    }
-
-    // Update sender's balance (deduct amount)
-    const { error: senderBalanceError } = await supabaseClient
-      .from('profiles')
-      .update({ 
-        balance: parseFloat(senderProfile.balance) - amount
-      })
-      .eq('user_id', user.id)
-
-    if (senderBalanceError) {
-      console.error('Sender balance update error:', senderBalanceError)
-    }
-
-    // Update recipient's balance (add amount) - admin client already initialized above
-    const { data: recipientBalanceData, error: recipientBalanceError } = await supabaseAdmin
-      .from('profiles')
-      .select('balance')
-      .eq('user_id', recipientId)
-      .single()
-
-    if (!recipientBalanceError && recipientBalanceData) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ 
-          balance: parseFloat(recipientBalanceData.balance) + amount
-        })
-        .eq('user_id', recipientId)
     }
 
     console.log(`P2P payment successful: ${user.id} -> ${recipientId}, amount: ${amount}`)

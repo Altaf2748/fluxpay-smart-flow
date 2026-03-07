@@ -206,28 +206,20 @@ serve(async (req) => {
       console.log(`Coupon ${couponCode} applied to ${merchant}: ${offer.reward_percent * 100}% discount = ₹${discountAmount}, final amount = ₹${finalPaymentAmount}`)
     }
 
-    // Check balance against final payment amount
-    if (profile.balance < finalPaymentAmount) {
-      return new Response(JSON.stringify({ 
-        success: false,
-        error: 'Insufficient balance',
-        message: 'You do not have enough balance for this transaction'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-    
+    // Use admin client for atomic balance deduction
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     // Generate transaction reference
     const transactionRef = `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`
     
     // Mock payment processing with final amount
     let paymentResult
     if (rail === 'UPI') {
-      // Mock NPCI Collect API
       paymentResult = await mockNPCICollect(finalPaymentAmount)
     } else if (rail === 'CARD') {
-      // Mock Card Network API
       paymentResult = await mockCardAuth(finalPaymentAmount)
     } else {
       throw new Error('Invalid payment rail')
@@ -236,6 +228,26 @@ serve(async (req) => {
     // Calculate cashback rewards on final amount
     const cashback = paymentResult.success ? finalPaymentAmount * 0.02 : 0
     const points = Math.round(cashback)
+
+    // If payment successful, atomically deduct balance first
+    if (paymentResult.success) {
+      const { data: deductSuccess, error: deductError } = await supabaseAdmin
+        .rpc('atomic_deduct_balance', {
+          p_user_id: user.id,
+          p_amount: finalPaymentAmount,
+        })
+
+      if (deductError || !deductSuccess) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Insufficient balance',
+          message: 'You do not have enough balance for this transaction'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
 
     // Insert transaction record with final amount
     const { data: transaction, error } = await supabaseClient
@@ -254,38 +266,29 @@ serve(async (req) => {
 
     if (error) {
       console.error('Transaction insert error:', error)
+      // If we already deducted balance, reverse it
+      if (paymentResult.success) {
+        await supabaseAdmin.rpc('atomic_deduct_balance', {
+          p_user_id: user.id,
+          p_amount: -finalPaymentAmount,
+        }).catch(e => console.error('Balance reversal failed:', e))
+      }
       throw error
     }
 
-    // If payment successful, update user balance with final amount
-    if (paymentResult.success) {
-      // Deduct final payment amount from user's balance
-      const { error: balanceError } = await supabaseClient
-        .from('profiles')
-        .update({ 
-          balance: parseFloat(profile.balance) - finalPaymentAmount
+    // Add rewards to ledger
+    if (paymentResult.success && cashback > 0) {
+      const { error: rewardsError } = await supabaseClient
+        .from('rewards_ledger')
+        .insert({
+          user_id: user.id,
+          transaction_id: transaction.id,
+          cashback: cashback,
+          points: points
         })
-        .eq('user_id', user.id)
 
-      if (balanceError) {
-        console.error('Balance update error:', balanceError)
-      }
-
-      // Add rewards to ledger
-      if (cashback > 0) {
-        const { error: rewardsError } = await supabaseClient
-          .from('rewards_ledger')
-          .insert({
-            user_id: user.id,
-            transaction_id: transaction.id,
-            cashback: cashback,
-            points: points
-          })
-
-        if (rewardsError) {
-          console.error('Rewards ledger error:', rewardsError)
-          // Don't fail the transaction if rewards fail
-        }
+      if (rewardsError) {
+        console.error('Rewards ledger error:', rewardsError)
       }
     }
 
