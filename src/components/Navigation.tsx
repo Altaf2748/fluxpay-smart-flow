@@ -9,9 +9,10 @@ import {
   Users,
   BarChart3,
   Star,
-  User as UserIcon,
   MessageSquare,
   Shield,
+  Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
@@ -29,7 +30,7 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [userName, setUserName] = useState('User');
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -40,7 +41,6 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
           .select('first_name, last_name')
           .eq('user_id', user.id)
           .single();
-
         if (profile) {
           setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
         }
@@ -48,16 +48,6 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
     };
     fetchUserName();
   }, [user]);
-
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (!menuRef.current) return;
-      if (menuRef.current.contains(e.target as Node)) return;
-      setMenuOpen(false);
-    };
-    if (menuOpen) document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [menuOpen]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -71,33 +61,67 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  const handleTabClick = (id: string) => {
+    setActiveTab(id);
+    setMobileOpen(false);
+  };
+
   return (
-    <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between h-14 sm:h-16">
+    <nav className="sticky top-0 z-50 glass border-b border-border/40">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex-shrink-0 font-bold text-lg sm:text-xl text-primary">
-            FluxPay
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center glow">
+              <Zap className="w-4.5 h-4.5 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold tracking-tight gradient-text font-[Space_Grotesk]">
+              FluxPay
+            </span>
           </div>
 
-          {/* Nav Items - Horizontal Scroll on Mobile */}
-          <div className="flex-1 mx-4 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-1 sm:gap-2 min-w-max">
+          {/* Desktop Nav */}
+          <div className="hidden lg:flex flex-1 mx-6 items-center justify-center">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => handleTabClick(item.id)}
                     className={cn(
-                      'flex flex-col sm:flex-row items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex-shrink-0',
+                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                       activeTab === item.id
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? 'gradient-primary text-primary-foreground shadow-md glow'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
                     )}
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">{item.label}</span>
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Mobile horizontal scroll */}
+          <div className="flex lg:hidden flex-1 mx-3 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 min-w-max">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabClick(item.id)}
+                    className={cn(
+                      'flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all flex-shrink-0',
+                      activeTab === item.id
+                        ? 'gradient-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
                   </button>
                 );
               })}
@@ -110,14 +134,17 @@ export const Navigation = ({ activeTab, setActiveTab }: NavigationProps) => {
               {isAdmin && (
                 <button
                   onClick={() => navigate('/admin')}
-                  className="text-xs sm:text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded-md hover:bg-primary/20 transition-colors"
+                  className="hidden sm:flex items-center gap-1.5 text-xs font-semibold gradient-accent text-primary-foreground px-3 py-1.5 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
                 >
-                  <Shield className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                  <Shield className="w-3.5 h-3.5" />
                   Admin
                 </button>
               )}
-              <div className="text-xs sm:text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                {userName}
+              <div className="flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-lg">
+                <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:inline text-sm font-medium text-foreground">{userName}</span>
               </div>
             </div>
           )}
