@@ -23,14 +23,8 @@ export const MPINReset = () => {
   const [loading, setLoading] = useState(false);
   const [securityVerified, setSecurityVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const { toast } = useToast();
-
-  const hashMPIN = async (pin: string) => {
-    const msgUint8 = new TextEncoder().encode(pin);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
 
   const handleSendOTP = async () => {
     setLoading(true);
@@ -38,24 +32,13 @@ export const MPINReset = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) throw new Error("No email found");
 
-      // Use Supabase's built-in OTP for reauthentication
-      const { error } = await supabase.auth.signInWithOtp({
-        email: user.email,
-      });
-
+      const { error } = await supabase.auth.signInWithOtp({ email: user.email });
       if (error) throw error;
 
       setOtpSent(true);
-      toast({
-        title: "OTP Sent",
-        description: `A verification code has been sent to ${user.email}`,
-      });
+      toast({ title: "OTP Sent", description: `A verification code has been sent to ${user.email}` });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send OTP",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to send OTP", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -67,22 +50,13 @@ export const MPINReset = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) throw new Error("No email found");
 
-      const { error } = await supabase.auth.verifyOtp({
-        email: user.email,
-        token,
-        type: 'email',
-      });
-
+      const { error } = await supabase.auth.verifyOtp({ email: user.email, token, type: 'email' });
       if (error) throw error;
 
       setSecurityVerified(true);
       toast({ title: "Verified", description: "Please enter your new MPIN" });
     } catch (error: any) {
-      toast({
-        title: "Invalid OTP",
-        description: error.message || "The OTP is incorrect or expired",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid OTP", description: error.message || "The OTP is incorrect or expired", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -90,7 +64,6 @@ export const MPINReset = () => {
 
   const handleVerifyCurrent = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (currentMpin.length !== 4 || !/^\d+$/.test(currentMpin)) {
       toast({ title: "Invalid MPIN", description: "MPIN must be 4 digits", variant: "destructive" });
       return;
@@ -98,19 +71,13 @@ export const MPINReset = () => {
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const mpinHash = await hashMPIN(currentMpin);
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('mpin_hash')
-        .eq('user_id', user.id)
-        .single();
+      const { data, error } = await supabase.functions.invoke('manage-mpin', {
+        body: { action: 'verify', mpin: currentMpin }
+      });
 
       if (error) throw error;
-      if (profile.mpin_hash !== mpinHash) {
-        toast({ title: "Invalid MPIN", description: "Current MPIN is incorrect", variant: "destructive" });
+      if (!data?.valid) {
+        toast({ title: "Invalid MPIN", description: data?.message || "Current MPIN is incorrect", variant: "destructive" });
         return;
       }
 
@@ -125,12 +92,10 @@ export const MPINReset = () => {
 
   const handleResetMPIN = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (newMpin.length !== 4 || !/^\d+$/.test(newMpin)) {
       toast({ title: "Invalid MPIN", description: "New MPIN must be 4 digits", variant: "destructive" });
       return;
     }
-
     if (newMpin !== confirmNewMpin) {
       toast({ title: "MPIN Mismatch", description: "New MPIN and confirmation do not match", variant: "destructive" });
       return;
@@ -138,16 +103,12 @@ export const MPINReset = () => {
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const mpinHash = await hashMPIN(newMpin);
-      const { error } = await supabase
-        .from('profiles')
-        .update({ mpin_hash: mpinHash, failed_mpin_attempts: 0, last_failed_attempt: null, mpin_locked_until: null })
-        .eq('user_id', user.id);
+      const { data, error } = await supabase.functions.invoke('manage-mpin', {
+        body: { action: 'reset', newMpin }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({ title: "MPIN Reset Successfully", description: "Your MPIN has been updated." });
       closeDialog();
@@ -166,9 +127,8 @@ export const MPINReset = () => {
     setSecurityVerified(false);
     setVerificationMethod(null);
     setOtpSent(false);
+    setOtpCode("");
   };
-
-  const [otpCode, setOtpCode] = useState("");
 
   return (
     <>
@@ -194,19 +154,14 @@ export const MPINReset = () => {
               <Lock className="h-5 w-5" /> Reset MPIN
             </DialogTitle>
             <DialogDescription>
-              {!verificationMethod
-                ? "Choose how to verify your identity"
-                : securityVerified
-                ? "Enter your new 4-digit MPIN"
-                : verificationMethod === 'pin'
-                ? "Enter your current MPIN"
-                : otpSent
-                ? "Enter the OTP sent to your email"
+              {!verificationMethod ? "Choose how to verify your identity"
+                : securityVerified ? "Enter your new 4-digit MPIN"
+                : verificationMethod === 'pin' ? "Enter your current MPIN"
+                : otpSent ? "Enter the OTP sent to your email"
                 : "We'll send a verification code to your email"}
             </DialogDescription>
           </DialogHeader>
 
-          {/* Step 1: Choose verification method */}
           {!verificationMethod && (
             <div className="space-y-3">
               <Button variant="outline" className="w-full justify-start h-14" onClick={() => setVerificationMethod('pin')}>
@@ -226,7 +181,6 @@ export const MPINReset = () => {
             </div>
           )}
 
-          {/* Step 2a: PIN verification */}
           {verificationMethod === 'pin' && !securityVerified && (
             <form onSubmit={handleVerifyCurrent} className="space-y-4">
               <div className="space-y-2">
@@ -241,7 +195,6 @@ export const MPINReset = () => {
             </form>
           )}
 
-          {/* Step 2b: OTP verification */}
           {verificationMethod === 'otp' && !securityVerified && (
             <div className="space-y-4">
               {!otpSent ? (
@@ -264,7 +217,6 @@ export const MPINReset = () => {
             </div>
           )}
 
-          {/* Step 3: Set new MPIN */}
           {securityVerified && (
             <form onSubmit={handleResetMPIN} className="space-y-4">
               <div className="space-y-2">
