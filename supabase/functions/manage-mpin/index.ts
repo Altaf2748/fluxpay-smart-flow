@@ -34,7 +34,7 @@ serve(async (req) => {
       })
     }
 
-    const { action, mpin, newMpin } = await req.json()
+    const { action, mpin, newMpin, currentMpin, otpToken } = await req.json()
 
     // Use admin client for profile reads/writes to bypass column-restriction trigger
     const supabaseAdmin = createClient(
@@ -157,10 +157,6 @@ serve(async (req) => {
       }
 
       // Server-side verification: require currentMpin OR otpToken
-      const { currentMpin, otpToken } = await req.json().catch(() => ({}))
-      // Since we already parsed the body above, re-read from the original parse
-      // We need to get these from the initial parse - fix by parsing once at the top
-      // Actually the body was already parsed at line 37, so currentMpin/otpToken come from there
 
       if (currentMpin) {
         // Verify current MPIN server-side
