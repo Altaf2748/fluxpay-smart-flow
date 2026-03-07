@@ -156,6 +156,73 @@ serve(async (req) => {
         })
       }
 
+      // Server-side verification: require currentMpin OR otpToken
+      const { currentMpin, otpToken } = await req.json().catch(() => ({}))
+      // Since we already parsed the body above, re-read from the original parse
+      // We need to get these from the initial parse - fix by parsing once at the top
+      // Actually the body was already parsed at line 37, so currentMpin/otpToken come from there
+
+      if (currentMpin) {
+        // Verify current MPIN server-side
+        if (!profile.mpin_hash) {
+          return new Response(JSON.stringify({ error: 'MPIN not set' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+        // Check lock
+        if (profile.mpin_locked_until) {
+          const lockTime = new Date(profile.mpin_locked_until)
+          if (lockTime > new Date()) {
+            const remainingMinutes = Math.ceil((lockTime.getTime() - Date.now()) / 60000)
+            return new Response(JSON.stringify({
+              error: 'Account locked',
+              message: `Too many failed attempts. Try again in ${remainingMinutes} minutes.`
+            }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
+        }
+
+        const valid = await verifyMpinHash(currentMpin, profile.mpin_hash)
+        if (!valid) {
+          const failedAttempts = (profile.failed_mpin_attempts || 0) + 1
+          const updateData: Record<string, unknown> = {
+            failed_mpin_attempts: failedAttempts,
+            last_failed_attempt: new Date().toISOString(),
+          }
+          if (failedAttempts >= 3) {
+            updateData.mpin_locked_until = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString()
+          }
+          await supabaseAdmin.from('profiles').update(updateData).eq('user_id', user.id)
+          return new Response(JSON.stringify({
+            error: 'Invalid MPIN',
+            message: failedAttempts >= 3
+              ? 'Too many failed attempts. Account locked for 3 hours.'
+              : `Wrong MPIN. ${Math.max(0, 3 - failedAttempts)} attempts remaining.`
+          }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+      } else if (otpToken) {
+        // Verify OTP server-side using the user's email
+        const email = user.email
+        if (!email) {
+          return new Response(JSON.stringify({ error: 'No email associated with account' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+        const { error: otpError } = await supabaseAdmin.auth.verifyOtp({
+          email,
+          token: otpToken,
+          type: 'email',
+        })
+        if (otpError) {
+          return new Response(JSON.stringify({ error: 'Invalid or expired OTP' }), {
+            status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+      } else {
+        return new Response(JSON.stringify({ error: 'Verification required. Provide currentMpin or otpToken.' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       const hashed = await bcrypt.hash(newMpin)
       await supabaseAdmin.from('profiles').update({
         mpin_hash: hashed,
