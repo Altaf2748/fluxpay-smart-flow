@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap, Plus, BarChart3, Gift } from 'lucide-react';
+import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap, Plus, BarChart3, Gift, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,25 +30,10 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   useEffect(() => {
     fetchBalances();
     fetchRecentTransactions();
-    
-    // Listen for balance update events from other components
-    const handleBalanceUpdate = () => {
-      fetchBalances();
-      fetchRecentTransactions();
-    };
-    
+    const handleBalanceUpdate = () => { fetchBalances(); fetchRecentTransactions(); };
     window.addEventListener('balance-updated', handleBalanceUpdate);
-    
-    // Refresh balances when component becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchBalances();
-        fetchRecentTransactions();
-      }
-    };
-    
+    const handleVisibilityChange = () => { if (!document.hidden) { fetchBalances(); fetchRecentTransactions(); } };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
       window.removeEventListener('balance-updated', handleBalanceUpdate);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -59,165 +43,121 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   const fetchBalances = async () => {
     try {
       setLoading(true);
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       setCurrentUserId(user.id);
-
-      // Fetch user profile for name and balance
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, balance, card_balance')
-        .eq('user_id', user.id)
-        .single();
-      
+      const { data: profile, error } = await supabase.from('profiles').select('first_name, last_name, balance, card_balance').eq('user_id', user.id).single();
       if (error) throw error;
-
       if (profile) {
         setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
-        const upiVal = profile.balance;
-        const cardVal = profile.card_balance;
-        setBalances({
-          upiBalance: upiVal,
-          cardBalance: cardVal,
-          cardCreditLimit: 0
-        });
+        setBalances({ upiBalance: profile.balance, cardBalance: profile.card_balance, cardCreditLimit: 0 });
       }
     } catch (error) {
       console.error('Error fetching balances:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch account balances",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      toast({ title: "Error", description: "Failed to fetch account balances", variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
   const fetchRecentTransactions = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(4);
-
+      const { data, error } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(4);
       if (error) throw error;
-
-      // Fetch sender names for received P2P transactions
       const formattedTransactions = await Promise.all(
         (data || []).map(async (txn) => {
           const isReceived = txn.recipient_id === user.id && txn.transaction_type === 'p2p';
           let merchantName = txn.merchant;
-
           if (isReceived) {
-            const { data: senderProfile } = await supabase
-              .rpc('get_user_display_name', { target_user_id: txn.user_id })
-              .single();
-            
+            const { data: senderProfile } = await supabase.rpc('get_user_display_name', { target_user_id: txn.user_id }).single();
             if (senderProfile) {
               const senderName = `${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim();
               merchantName = `From ${senderName || txn.merchant}`;
-            } else {
-              merchantName = `From ${txn.merchant}`;
-            }
+            } else { merchantName = `From ${txn.merchant}`; }
           }
-
-          return {
-            id: txn.id,
-            merchant: merchantName,
-            amount: isReceived ? txn.amount : -txn.amount,
-            type: txn.rail,
-            reward: txn.reward_amount || 0,
-            time: getTimeAgo(txn.created_at)
-          };
+          return { id: txn.id, merchant: merchantName, amount: isReceived ? txn.amount : -txn.amount, type: txn.rail, reward: txn.reward_amount || 0, time: getTimeAgo(txn.created_at), isReceived };
         })
       );
-
       setRecentTransactions(formattedTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    }
+    } catch (error) { console.error('Error fetching transactions:', error); }
   };
 
   const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = Date.now() - new Date(dateString).getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
   };
 
+  const totalBalance = (balances.upiBalance || 0) + (balances.cardBalance || 0);
+
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome, {userName}!</h1>
-        <p className="text-sm sm:text-base text-gray-600">Here's your financial overview</p>
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+      {/* Greeting */}
+      <div className="mb-8">
+        <p className="text-sm font-medium text-muted-foreground mb-1">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">{userName}</h1>
       </div>
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        {/* Main Balance */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
         {balances.upiBalance === null && balances.cardBalance === null ? (
-          <Card className="md:col-span-2 border-dashed border-2 border-yellow-400 bg-yellow-50">
-            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-              <Zap className="w-10 h-10 text-yellow-500 mb-3" />
-              <h3 className="text-lg font-semibold text-yellow-800 mb-1">Account Not Activated</h3>
-              <p className="text-sm text-yellow-700">Your wallet balance hasn't been set yet. Please contact your admin to activate your account.</p>
+          <Card className="lg:col-span-2 glass glass-hover border-dashed border-2 border-primary/30">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-14 h-14 rounded-2xl gradient-gold flex items-center justify-center mb-4 shadow-lg">
+                <Zap className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Account Not Activated</h3>
+              <p className="text-sm text-muted-foreground max-w-xs">Your wallet hasn't been set up yet. Contact admin to activate.</p>
             </CardContent>
           </Card>
         ) : (
-          <Card className="md:col-span-2 bg-gradient-to-br from-blue-600 to-purple-600 text-white border-0">
-            <CardHeader className="pb-4">
+          <Card className="lg:col-span-2 gradient-primary text-primary-foreground border-0 overflow-hidden relative glow">
+            {/* Decorative circles */}
+            <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-white/5" />
+            <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-white/5" />
+            <CardHeader className="pb-4 relative z-10">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-blue-100 text-sm font-medium">Total Balance</CardTitle>
-                  <div className="flex items-center mt-2">
-                    <span className="text-3xl font-bold">
-                      {loading ? '₹***,***' : balanceVisible ? `₹${((balances.upiBalance || 0) + (balances.cardBalance || 0)).toLocaleString()}` : '₹***,***'}
+                  <CardTitle className="text-sm font-medium text-primary-foreground/70 mb-1">Total Balance</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-4xl font-bold tracking-tight">
+                      {loading ? '₹•••••' : balanceVisible ? `₹${totalBalance.toLocaleString()}` : '₹•••••'}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <button
                       onClick={() => setBalanceVisible(!balanceVisible)}
-                      className="ml-2 text-white hover:bg-white/20"
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                     >
                       {balanceVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
+                    </button>
                   </div>
                 </div>
-                <Badge className="bg-white/20 text-white border-0">Gold Tier</Badge>
+                <Badge className="bg-white/15 text-primary-foreground border-white/20 backdrop-blur-sm text-xs">
+                  ✦ Gold Tier
+                </Badge>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <Smartphone className="w-5 h-5" />
+                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                  <div className="p-2 bg-white/15 rounded-lg">
+                    <Smartphone className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-blue-100 text-sm">UPI Balance</p>
-                    <p className="font-semibold">{loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}</p>
+                    <p className="text-xs text-primary-foreground/70">UPI</p>
+                    <p className="font-semibold text-sm">{loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <CreditCard className="w-5 h-5" />
+                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                  <div className="p-2 bg-white/15 rounded-lg">
+                    <CreditCard className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-blue-100 text-sm">Card Balance</p>
-                    <p className="font-semibold">{loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}</p>
+                    <p className="text-xs text-primary-foreground/70">Card</p>
+                    <p className="font-semibold text-sm">{loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}</p>
                   </div>
                 </div>
               </div>
@@ -226,21 +166,22 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
         )}
 
         {/* Rewards Card */}
-        <Card className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white border-0">
-          <CardHeader>
-            <CardTitle className="text-orange-100 text-sm font-medium flex items-center">
-              <Star className="w-4 h-4 mr-1" />
-              Rewards Points
+        <Card className="gradient-gold text-primary-foreground border-0 overflow-hidden relative">
+          <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/10" />
+          <CardHeader className="relative z-10">
+            <CardTitle className="text-sm font-medium text-primary-foreground/80 flex items-center gap-1.5">
+              <Star className="w-4 h-4" />
+              Reward Points
             </CardTitle>
-            <div className="text-2xl font-bold">2,847</div>
+            <div className="text-3xl font-bold tracking-tight">2,847</div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+          <CardContent className="relative z-10">
+            <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-orange-100">This Month</span>
-                <span>+247 pts</span>
+                <span className="text-primary-foreground/70">This month</span>
+                <span className="font-medium">+247 pts</span>
               </div>
-              <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border-0">
+              <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-primary-foreground border-0 backdrop-blur-sm">
                 Redeem Points
               </Button>
             </div>
@@ -249,70 +190,60 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <Button 
-          className="h-14 sm:h-16 bg-blue-600 hover:bg-blue-700 flex-col space-y-1"
-          onClick={onNavigateToPayment}
-        >
-          <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-xs sm:text-sm">Quick Pay</span>
-        </Button>
-        <Button 
-          variant="outline" 
-          className="h-14 sm:h-16 flex-col space-y-1"
-          onClick={onNavigateToSettings}
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-xs sm:text-sm">Add Card</span>
-        </Button>
-        <Button 
-          variant="outline" 
-          className="h-14 sm:h-16 flex-col space-y-1"
-          onClick={onNavigateToAnalytics}
-        >
-          <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-xs sm:text-sm">Analytics</span>
-        </Button>
-        <Button 
-          variant="outline" 
-          className="h-14 sm:h-16 flex-col space-y-1"
-          onClick={onNavigateToOffers}
-        >
-          <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-xs sm:text-sm">Offers</span>
-        </Button>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        {[
+          { label: 'Quick Pay', icon: Zap, onClick: onNavigateToPayment, variant: 'primary' as const },
+          { label: 'Add Card', icon: Plus, onClick: onNavigateToSettings, variant: 'outline' as const },
+          { label: 'Analytics', icon: BarChart3, onClick: onNavigateToAnalytics, variant: 'outline' as const },
+          { label: 'Offers', icon: Gift, onClick: onNavigateToOffers, variant: 'outline' as const },
+        ].map((action) => (
+          <button
+            key={action.label}
+            onClick={action.onClick}
+            className={`group flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
+              action.variant === 'primary'
+                ? 'gradient-primary text-primary-foreground border-transparent glow hover:opacity-90'
+                : 'glass glass-hover border-border/50 text-foreground hover:border-primary/30'
+            }`}
+          >
+            <action.icon className="w-5 h-5" />
+            <span className="text-sm font-medium">{action.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Recent Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+      <Card className="glass border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Recent Transactions</CardTitle>
+          <span className="text-xs text-muted-foreground font-medium">Last 4</span>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2">
+            {recentTransactions.length === 0 && (
+              <p className="text-center text-muted-foreground py-8 text-sm">No transactions yet</p>
+            )}
             {recentTransactions.map((txn) => (
-              <div key={txn.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className={`p-2 rounded-lg ${
-                    txn.type === 'UPI' ? 'bg-blue-100 text-blue-600' :
-                    txn.type === 'Card' ? 'bg-purple-100 text-purple-600' :
-                    'bg-green-100 text-green-600'
+              <div key={txn.id} className="flex items-center justify-between p-3.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl ${
+                    txn.amount > 0
+                      ? 'bg-emerald-500/10 text-emerald-600'
+                      : 'bg-primary/10 text-primary'
                   }`}>
-                    {txn.type === 'UPI' ? <Smartphone className="w-4 h-4" /> : 
-                     txn.type === 'Card' ? <CreditCard className="w-4 h-4" /> :
-                     <TrendingUp className="w-4 h-4" />}
+                    {txn.amount > 0 ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{txn.merchant}</p>
-                    <p className="text-sm text-gray-500">{txn.time} • {txn.type}</p>
+                    <p className="font-medium text-sm text-foreground">{txn.merchant}</p>
+                    <p className="text-xs text-muted-foreground">{txn.time} · {txn.type}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-semibold ${txn.amount > 0 ? 'text-green-600' : 'text-gray-900'}`}>
-                    {txn.amount > 0 ? '+' : ''}₹{Math.abs(txn.amount)}
+                  <p className={`font-semibold text-sm ${txn.amount > 0 ? 'text-emerald-600' : 'text-foreground'}`}>
+                    {txn.amount > 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString()}
                   </p>
                   {txn.reward > 0 && (
-                    <p className="text-sm text-yellow-600">+{txn.reward} pts</p>
+                    <p className="text-xs text-amber-600 font-medium">+{txn.reward} pts</p>
                   )}
                 </div>
               </div>

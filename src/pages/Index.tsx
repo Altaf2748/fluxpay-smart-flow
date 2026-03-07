@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Hero } from '@/components/Hero';
 import { WalletDashboard } from '@/components/WalletDashboard';
@@ -19,7 +18,6 @@ const Index = () => {
   const { user } = useAuth();
 
   React.useEffect(() => {
-    // Check if there's a target tab from QR scan
     const targetTab = sessionStorage.getItem('targetTab');
     if (targetTab) {
       setActiveTab(targetTab);
@@ -28,7 +26,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
       
       {activeTab === 'home' && (
