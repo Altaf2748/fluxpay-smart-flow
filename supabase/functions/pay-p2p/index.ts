@@ -73,8 +73,14 @@ serve(async (req) => {
       }
     }
 
-    // Verify MPIN
-    const mpinHash = createHash('sha256').update(mpin).digest('hex')
+    // Verify MPIN (supports bcrypt and legacy SHA-256)
+    let mpinValid = false;
+    if (senderProfile.mpin_hash.startsWith('$2')) {
+      mpinValid = await bcrypt.compare(mpin, senderProfile.mpin_hash);
+    } else {
+      const mpinHash = createHash('sha256').update(mpin).digest('hex');
+      mpinValid = mpinHash === senderProfile.mpin_hash;
+    }
     if (!senderProfile.mpin_hash) {
       return new Response(JSON.stringify({ 
         error: 'MPIN not set',
@@ -85,7 +91,7 @@ serve(async (req) => {
       })
     }
 
-    if (mpinHash !== senderProfile.mpin_hash) {
+    if (!mpinValid) {
       const failedAttempts = (senderProfile.failed_mpin_attempts || 0) + 1
       const now = new Date().toISOString()
       
@@ -235,7 +241,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing P2P payment:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ error: 'An internal error occurred. Please try again.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

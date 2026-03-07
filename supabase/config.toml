@@ -52,3 +52,6 @@ verify_jwt = true
 
 [functions.admin-lookup-user]
 verify_jwt = false
+
+[functions.manage-mpin]
+verify_jwt = false
