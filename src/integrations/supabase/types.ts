@@ -241,9 +241,12 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          coupon_code: string | null
           created_at: string
+          discount_amount: number | null
           id: string
           merchant: string
+          original_amount: number | null
           rail: string
           recipient_id: string | null
           reward_amount: number | null
@@ -255,9 +258,12 @@ export type Database = {
         }
         Insert: {
           amount: number
+          coupon_code?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           merchant: string
+          original_amount?: number | null
           rail: string
           recipient_id?: string | null
           reward_amount?: number | null
@@ -269,9 +275,12 @@ export type Database = {
         }
         Update: {
           amount?: number
+          coupon_code?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           merchant?: string
+          original_amount?: number | null
           rail?: string
           recipient_id?: string | null
           reward_amount?: number | null
