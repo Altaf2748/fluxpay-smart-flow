@@ -18,7 +18,11 @@ interface Transaction {
   transaction_type: string;
 }
 
-export const TransactionHistory = () => {
+interface TransactionHistoryProps {
+  onViewReceipts?: () => void;
+}
+
+export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onViewReceipts }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
