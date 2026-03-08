@@ -277,7 +277,7 @@ const AdminDashboard = () => {
       toast({ title: 'Admin Removed', description: `${admin.first_name || 'User'} is no longer an admin.` });
       fetchAdmins();
     }
-  
+  };
 
   const resetOfferForm = () => {
     setOfferForm({ title: '', description: '', mcc: '', reward_percent: '', redeem_code: '', terms: '', valid_to: '2099-12-31' });
