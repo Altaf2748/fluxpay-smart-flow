@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Shield, Users, Gift, Plus, Trash2, Edit, ArrowLeft, UserPlus, KeyRound, ShieldCheck, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Shield, Users, Gift, Plus, Trash2, Edit, ArrowLeft, UserPlus, KeyRound, ShieldCheck, CheckCircle, XCircle, Eye, Search, Wallet, CreditCard, Phone, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -28,6 +28,7 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userTransactions, setUserTransactions] = useState<any[]>([]);
   const [viewingUser, setViewingUser] = useState<any>(null);
+  const [userSearch, setUserSearch] = useState('');
 
   // Balance setting
   const [balanceDialog, setBalanceDialog] = useState(false);
@@ -290,8 +291,17 @@ const AdminDashboard = () => {
     return <Navigate to="/" replace />;
   }
 
+  const filteredUsers = users.filter((u) => {
+    if (!userSearch.trim()) return true;
+    const q = userSearch.toLowerCase();
+    const name = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
+    const email = (userEmails[u.user_id] || '').toLowerCase();
+    const phone = (u.phone || '').toLowerCase();
+    return name.includes(q) || email.includes(q) || phone.includes(q);
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -314,72 +324,105 @@ const AdminDashboard = () => {
             <TabsTrigger value="admins"><Shield className="w-4 h-4 mr-1" /> Admins</TabsTrigger>
           </TabsList>
 
-          {/* USERS TAB */}
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Users ({users.length})</CardTitle>
+            <Card className="glass border-border/50">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg font-semibold">All Users ({filteredUsers.length})</CardTitle>
+                  <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name, email, or phone..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="pl-9 bg-muted/40 border-border/50"
+                    />
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>UPI Balance</TableHead>
-                      <TableHead>Card Balance</TableHead>
-                      <TableHead>KYC</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">
-                          {u.first_name || ''} {u.last_name || ''}
-                        </TableCell>
-                        <TableCell className="text-sm">{userEmails[u.user_id] || '—'}</TableCell>
-                        <TableCell>{u.phone || '—'}</TableCell>
-                        <TableCell>
-                          {u.balance !== null ? `₹${Number(u.balance).toLocaleString()}` : <Badge variant="destructive">Not Set</Badge>}
-                        </TableCell>
-                        <TableCell>
-                          {u.card_balance !== null ? `₹${Number(u.card_balance).toLocaleString()}` : <Badge variant="destructive">Not Set</Badge>}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={u.kyc_status === 'verified' ? 'default' : 'secondary'}>
+              <CardContent className="p-0 sm:p-6 pt-0">
+                {filteredUsers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Users className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                    <p className="text-sm text-muted-foreground">{userSearch ? 'No users match your search' : 'No users yet'}</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 px-4 pb-4 sm:px-0 sm:pb-0">
+                    {filteredUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border/30 transition-colors"
+                      >
+                        {/* User Info */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground flex-shrink-0">
+                            {(u.first_name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">
+                              {u.first_name || ''} {u.last_name || ''} 
+                            </p>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                              {userEmails[u.user_id] && (
+                                <span className="flex items-center gap-1 truncate">
+                                  <Mail className="w-3 h-3 flex-shrink-0" /> {userEmails[u.user_id]}
+                                </span>
+                              )}
+                              {u.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3" /> {u.phone}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Balances */}
+                        <div className="flex items-center gap-4 text-xs sm:text-sm flex-shrink-0 pl-13 sm:pl-0">
+                          <div className="flex items-center gap-1.5">
+                            <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className={u.balance !== null ? 'font-medium text-foreground' : 'text-destructive'}>
+                              {u.balance !== null ? `₹${Number(u.balance).toLocaleString()}` : 'Not Set'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className={u.card_balance !== null ? 'font-medium text-foreground' : 'text-destructive'}>
+                              {u.card_balance !== null ? `₹${Number(u.card_balance).toLocaleString()}` : 'Not Set'}
+                            </span>
+                          </div>
+                          <Badge variant={u.kyc_status === 'verified' ? 'default' : 'secondary'} className="text-[10px]">
                             {u.kyc_status || 'pending'}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2 flex-wrap">
-                            <Button size="sm" variant="outline" onClick={() => setViewingUser(u)}>
-                              <Eye className="w-3 h-3 mr-1" /> View
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => {
-                              setBalanceUser(u);
-                              setNewUpiBalance(u.balance !== null ? String(u.balance) : '');
-                              setNewCardBalance(u.card_balance !== null ? String(u.card_balance) : '');
-                              setBalanceDialog(true);
-                            }}>
-                              Set Balance
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => {
-                              setSelectedUser(u);
-                              fetchUserTransactions(u.user_id);
-                            }}>
-                              Transactions
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteUser(u)}>
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 pl-13 sm:pl-0 flex-shrink-0">
+                          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setViewingUser(u)}>
+                            <Eye className="w-3 h-3 mr-1" /> View
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => {
+                            setBalanceUser(u);
+                            setNewUpiBalance(u.balance !== null ? String(u.balance) : '');
+                            setNewCardBalance(u.card_balance !== null ? String(u.card_balance) : '');
+                            setBalanceDialog(true);
+                          }}>
+                            <Wallet className="w-3 h-3 mr-1" /> Balance
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => {
+                            setSelectedUser(u);
+                            fetchUserTransactions(u.user_id);
+                          }}>
+                            Txns
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteUser(u)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
