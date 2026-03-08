@@ -291,8 +291,17 @@ const AdminDashboard = () => {
     return <Navigate to="/" replace />;
   }
 
+  const filteredUsers = users.filter((u) => {
+    if (!userSearch.trim()) return true;
+    const q = userSearch.toLowerCase();
+    const name = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
+    const email = (userEmails[u.user_id] || '').toLowerCase();
+    const phone = (u.phone || '').toLowerCase();
+    return name.includes(q) || email.includes(q) || phone.includes(q);
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
