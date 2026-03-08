@@ -176,9 +176,39 @@ export const Settings = () => {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-sm sm:text-base text-gray-600">Manage your payment methods and security</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Manage your payment methods and security</p>
       </div>
+
+      {/* Theme Toggle */}
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sun className="w-5 h-5 text-amber-500 dark:hidden" />
+            <Moon className="w-5 h-5 text-primary hidden dark:block" />
+            Appearance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Dark Mode</p>
+              <p className="text-xs text-muted-foreground">Switch between light and dark themes</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Sun className="w-4 h-4 text-muted-foreground" />
+              <Switch
+                checked={document.documentElement.classList.contains('dark')}
+                onCheckedChange={(checked) => {
+                  document.documentElement.classList.toggle('dark', checked);
+                  localStorage.setItem('theme', checked ? 'dark' : 'light');
+                }}
+              />
+              <Moon className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* MPIN Setup or Reset */}
       {!mpinSet ? (
