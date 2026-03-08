@@ -49,6 +49,9 @@ const AdminDashboard = () => {
   const [adminEmail, setAdminEmail] = useState('');
   const [admins, setAdmins] = useState<any[]>([]);
   const [adminRequests, setAdminRequests] = useState<any[]>([]);
+  const [passwordDialog, setPasswordDialog] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [pendingAdminAction, setPendingAdminAction] = useState<{ type: 'add' | 'remove'; payload?: any } | null>(null);
 
   useEffect(() => {
     if (isAdmin) {
