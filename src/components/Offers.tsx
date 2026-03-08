@@ -160,7 +160,11 @@ const OFFERS: Offer[] = [
   }
 ];
 
-export const Offers = () => {
+interface OffersProps {
+  onOpenStore?: (offer: Offer) => void;
+}
+
+export const Offers: React.FC<OffersProps> = ({ onOpenStore }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [copied, setCopied] = useState(false);
@@ -300,13 +304,22 @@ export const Offers = () => {
                   </div>
                 </div>
                 
-                <Button 
-                  className="w-full" 
-                  size="sm"
-                  onClick={() => handleActivateOffer(offer)}
-                >
-                  Activate Offer
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    className="flex-1" 
+                    size="sm"
+                    onClick={() => onOpenStore?.(offer)}
+                  >
+                    Shop Now
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleActivateOffer(offer)}
+                  >
+                    View Code
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

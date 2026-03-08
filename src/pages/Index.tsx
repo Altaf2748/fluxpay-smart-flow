@@ -9,6 +9,7 @@ import { Settings } from '@/components/Settings';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { Analytics } from '@/components/Analytics';
 import { Offers } from '@/components/Offers';
+import { BrandStore } from '@/components/BrandStore';
 import { P2PPayment } from '@/components/P2PPayment';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
@@ -28,6 +29,7 @@ const TabContent = ({ children }: { children: React.ReactNode }) => (
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [storeOffer, setStoreOffer] = useState<any>(null);
   const { user } = useAuth();
 
   React.useEffect(() => {
@@ -37,6 +39,16 @@ const Index = () => {
       sessionStorage.removeItem('targetTab');
     }
   }, []);
+
+  const handleOpenStore = (offer: any) => {
+    setStoreOffer(offer);
+    setActiveTab('store');
+  };
+
+  const handleStoreCheckout = (merchant: string, amount: number, couponCode: string) => {
+    sessionStorage.setItem('cartCheckout', JSON.stringify({ merchant, amount, couponCode }));
+    setActiveTab('pay');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,7 +78,16 @@ const Index = () => {
         {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}
         {activeTab === 'rewards' && <TabContent key="rewards"><RewardsSection /></TabContent>}
         {activeTab === 'analytics' && <TabContent key="analytics"><Analytics /></TabContent>}
-        {activeTab === 'offers' && <TabContent key="offers"><Offers /></TabContent>}
+        {activeTab === 'offers' && <TabContent key="offers"><Offers onOpenStore={handleOpenStore} /></TabContent>}
+        {activeTab === 'store' && storeOffer && (
+          <TabContent key="store">
+            <BrandStore 
+              offer={storeOffer} 
+              onBack={() => setActiveTab('offers')} 
+              onCheckout={handleStoreCheckout} 
+            />
+          </TabContent>
+        )}
         {activeTab === 'chat' && <TabContent key="chat"><FinanceChatbot /></TabContent>}
       </AnimatePresence>
     </div>
