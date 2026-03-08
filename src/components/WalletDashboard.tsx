@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap, Plus, BarChart3, Gift, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface WalletDashboardProps {
   onNavigateToPayment?: () => void;
   onNavigateToSettings?: () => void;
   onNavigateToAnalytics?: () => void;
   onNavigateToOffers?: () => void;
+}
+
+interface BalanceChange {
+  type: 'upi' | 'card' | 'total';
+  amount: number; // negative = deducted, positive = received
 }
 
 export const WalletDashboard: React.FC<WalletDashboardProps> = ({ 
@@ -25,6 +31,8 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   const [loading, setLoading] = useState(true);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [balanceChanges, setBalanceChanges] = useState<BalanceChange[]>([]);
+  const prevBalancesRef = useRef<{ upi: number | null; card: number | null }>({ upi: null, card: null });
   const { toast } = useToast();
 
   useEffect(() => {
