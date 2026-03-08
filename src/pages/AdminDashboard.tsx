@@ -224,7 +224,13 @@ const AdminDashboard = () => {
 
   const handleToggleOffer = async (offer: any) => {
     const { error } = await supabase.from('offers').update({ active: !offer.active }).eq('id', offer.id);
-    if (!error) fetchOffers();
+    if (error) {
+      console.error('Toggle offer error:', error);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: offer.active ? 'Offer Deactivated' : 'Offer Activated' });
+      fetchOffers();
+    }
   };
 
   const handleAddAdmin = async () => {
