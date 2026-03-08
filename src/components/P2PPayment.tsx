@@ -356,12 +356,12 @@ export const P2PPayment = () => {
 
   return (
     <>
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <Users className="w-8 h-8 text-primary" />
+          <Users className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold gradient-text">Send Money</h1>
-            <p className="text-muted-foreground">Transfer money to friends and family</p>
+            <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Send Money</h1>
+            <p className="text-sm text-muted-foreground">Transfer money to friends and family</p>
           </div>
         </div>
 
