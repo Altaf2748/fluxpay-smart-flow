@@ -60,7 +60,7 @@ serve(async (req) => {
     // Get user profile for MPIN verification
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('mpin_hash, failed_mpin_attempts, mpin_locked_until, balance')
+      .select('mpin_hash, failed_mpin_attempts, mpin_locked_until, balance, card_balance')
       .eq('user_id', user.id)
       .single()
 
@@ -230,19 +230,34 @@ serve(async (req) => {
     const cashback = paymentResult.success ? finalPaymentAmount * 0.02 : 0
     const points = Math.round(cashback)
 
-    // If payment successful, atomically deduct balance first
+    // If payment successful, atomically deduct from the correct balance based on rail
     if (paymentResult.success) {
-      const { data: deductSuccess, error: deductError } = await supabaseAdmin
-        .rpc('atomic_deduct_balance', {
-          p_user_id: user.id,
-          p_amount: finalPaymentAmount,
-        })
+      let deductSuccess = false
+      let deductError = null
+
+      if (rail === 'CARD') {
+        const result = await supabaseAdmin
+          .rpc('atomic_deduct_card_balance', {
+            p_user_id: user.id,
+            p_amount: finalPaymentAmount,
+          })
+        deductSuccess = result.data
+        deductError = result.error
+      } else {
+        const result = await supabaseAdmin
+          .rpc('atomic_deduct_balance', {
+            p_user_id: user.id,
+            p_amount: finalPaymentAmount,
+          })
+        deductSuccess = result.data
+        deductError = result.error
+      }
 
       if (deductError || !deductSuccess) {
         return new Response(JSON.stringify({ 
           success: false,
           error: 'Insufficient balance',
-          message: 'You do not have enough balance for this transaction'
+          message: `You do not have enough ${rail === 'CARD' ? 'card' : 'UPI'} balance for this transaction`
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -272,7 +287,8 @@ serve(async (req) => {
       console.error('Transaction insert error:', error)
       // If we already deducted balance, reverse it
       if (paymentResult.success) {
-        const { error: reversalError } = await supabaseAdmin.rpc('atomic_deduct_balance', {
+        const rpcName = rail === 'CARD' ? 'atomic_deduct_card_balance' : 'atomic_deduct_balance'
+        const { error: reversalError } = await supabaseAdmin.rpc(rpcName, {
           p_user_id: user.id,
           p_amount: -finalPaymentAmount,
         })
