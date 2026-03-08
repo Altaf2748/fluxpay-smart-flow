@@ -170,7 +170,10 @@ serve(async (req) => {
         p_amount: amount,
       })
 
+    console.log('Transfer result:', { transferSuccess, transferError, senderId: user.id, recipientId, amount })
+
     if (transferError || !transferSuccess) {
+      console.error('Transfer failed:', { transferError, transferSuccess })
       return new Response(JSON.stringify({ 
         error: 'Insufficient balance',
         message: 'You do not have enough balance for this transaction'
