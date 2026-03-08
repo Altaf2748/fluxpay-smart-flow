@@ -170,23 +170,75 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                <div className="relative flex items-center gap-3 bg-white/10 rounded-xl p-3">
                   <div className="p-2 bg-white/15 rounded-lg">
                     <Smartphone className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-xs text-primary-foreground/70">UPI</p>
-                    <p className="font-semibold text-sm">{loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}</p>
+                    <motion.p
+                      key={balances.upiBalance}
+                      initial={{ scale: 1.15, color: '#facc15' }}
+                      animate={{ scale: 1, color: '#ffffff' }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className="font-semibold text-sm"
+                    >
+                      {loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}
+                    </motion.p>
                   </div>
+                  <AnimatePresence>
+                    {balanceChanges.find(c => c.type === 'upi') && (
+                      <motion.span
+                        initial={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 0, y: -24 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 2, ease: 'easeOut' }}
+                        className={`absolute -top-1 right-2 text-xs font-bold ${
+                          balanceChanges.find(c => c.type === 'upi')!.amount < 0
+                            ? 'text-red-300'
+                            : 'text-emerald-300'
+                        }`}
+                      >
+                        {balanceChanges.find(c => c.type === 'upi')!.amount < 0 ? '' : '+'}
+                        ₹{Math.abs(balanceChanges.find(c => c.type === 'upi')!.amount).toLocaleString()}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                <div className="relative flex items-center gap-3 bg-white/10 rounded-xl p-3">
                   <div className="p-2 bg-white/15 rounded-lg">
                     <CreditCard className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-xs text-primary-foreground/70">Card</p>
-                    <p className="font-semibold text-sm">{loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}</p>
+                    <motion.p
+                      key={balances.cardBalance}
+                      initial={{ scale: 1.15, color: '#facc15' }}
+                      animate={{ scale: 1, color: '#ffffff' }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className="font-semibold text-sm"
+                    >
+                      {loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}
+                    </motion.p>
                   </div>
+                  <AnimatePresence>
+                    {balanceChanges.find(c => c.type === 'card') && (
+                      <motion.span
+                        initial={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 0, y: -24 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 2, ease: 'easeOut' }}
+                        className={`absolute -top-1 right-2 text-xs font-bold ${
+                          balanceChanges.find(c => c.type === 'card')!.amount < 0
+                            ? 'text-red-300'
+                            : 'text-emerald-300'
+                        }`}
+                      >
+                        {balanceChanges.find(c => c.type === 'card')!.amount < 0 ? '' : '+'}
+                        ₹{Math.abs(balanceChanges.find(c => c.type === 'card')!.amount).toLocaleString()}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </CardContent>
