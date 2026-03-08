@@ -222,7 +222,7 @@ export const Settings = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Smartphone className="w-5 h-5 mr-2 text-blue-600" />
+              <Smartphone className="w-5 h-5 mr-2 text-primary" />
               Link UPI VPA
             </CardTitle>
           </CardHeader>
