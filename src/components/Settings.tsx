@@ -175,8 +175,8 @@ export const Settings = () => {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-sm sm:text-base text-gray-600">Manage your payment methods and security</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Manage your payment methods and security</p>
       </div>
 
       {/* MPIN Setup or Reset */}
@@ -202,9 +202,9 @@ export const Settings = () => {
                   <Check className="w-6 h-6 mr-2" />
                   <span className="font-medium">UPI Linked</span>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">VPA</p>
-                  <p className="font-medium">{linkedUPI.vpa}</p>
+                <div className="bg-muted/40 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">VPA</p>
+                  <p className="font-medium text-foreground">{linkedUPI.vpa}</p>
                 </div>
               </div>
             ) : (
@@ -257,14 +257,14 @@ export const Settings = () => {
                   <Check className="w-6 h-6 mr-2" />
                   <span className="font-medium">Card Linked</span>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="bg-muted/40 rounded-lg p-4 space-y-2">
                   <div>
-                    <p className="text-sm text-gray-600">Card Number</p>
-                    <p className="font-medium">**** **** **** {linkedCard.card_last4}</p>
+                    <p className="text-sm text-muted-foreground">Card Number</p>
+                    <p className="font-medium text-foreground">**** **** **** {linkedCard.card_last4}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Expiry</p>
-                    <p className="font-medium">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
+                    <p className="text-sm text-muted-foreground">Expiry</p>
+                    <p className="font-medium text-foreground">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
                   </div>
                 </div>
               </div>

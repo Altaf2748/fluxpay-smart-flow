@@ -56,42 +56,44 @@ export const RewardsSection = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Your Rewards</h1>
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-6">Your Rewards</h1>
 
       {/* Total Rewards */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-          <CardHeader>
-            <CardTitle className="flex items-center text-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <Card className="gradient-primary text-primary-foreground border-0 overflow-hidden relative">
+          <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/5" />
+          <CardHeader className="relative z-10">
+            <CardTitle className="flex items-center text-primary-foreground text-sm sm:text-base">
               <Gift className="w-5 h-5 mr-2" />
               Total Cashback
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">
+          <CardContent className="relative z-10">
+            <div className="text-3xl sm:text-4xl font-bold">
               {loading ? '₹••••' : `₹${totalRewards.cashback.toFixed(2)}`}
             </div>
-            <p className="text-green-100 mt-2">Earned from all transactions</p>
+            <p className="text-primary-foreground/70 mt-2 text-sm">Earned from all transactions</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
-          <CardHeader>
-            <CardTitle className="flex items-center text-white">
+        <Card className="gradient-gold text-primary-foreground border-0 overflow-hidden relative">
+          <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/10" />
+          <CardHeader className="relative z-10">
+            <CardTitle className="flex items-center text-primary-foreground text-sm sm:text-base">
               <Star className="w-5 h-5 mr-2" />
               Reward Points
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold mb-3">
+          <CardContent className="relative z-10">
+            <div className="text-3xl sm:text-4xl font-bold mb-3">
               {loading ? '•••••' : totalRewards.points.toLocaleString()}
             </div>
-            <p className="text-orange-100 mb-4">Available to redeem</p>
+            <p className="text-primary-foreground/70 mb-4 text-sm">Available to redeem</p>
             <Button 
               onClick={() => setShowRedemption(true)}
               disabled={loading || totalRewards.points < 100}
-              className="w-full bg-white text-orange-600 hover:bg-orange-50"
+              className="w-full bg-white/20 hover:bg-white/30 text-primary-foreground border-0 backdrop-blur-sm"
             >
               <Gift className="w-4 h-4 mr-2" />
               Redeem Points
@@ -101,18 +103,18 @@ export const RewardsSection = () => {
       </div>
 
       {/* Recent Rewards */}
-      <Card>
+      <Card className="glass border-border/50">
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-foreground">
             <TrendingUp className="w-5 h-5 mr-2" />
             Recent Earnings
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
           ) : recentRewards.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               No rewards yet. Make your first payment to start earning!
             </div>
           ) : (
@@ -120,21 +122,21 @@ export const RewardsSection = () => {
               {recentRewards.map((reward, index) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
+                  className="flex justify-between items-center p-3 sm:p-4 bg-muted/30 rounded-xl border border-border/30"
                 >
-                  <div>
-                    <p className="font-medium">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-foreground truncate">
                       {reward.transactions?.merchant || 'Transaction'}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       ₹{parseFloat(reward.transactions?.amount || 0).toFixed(2)} transaction
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-green-600">
+                  <div className="text-right flex-shrink-0 ml-3">
+                    <p className="font-semibold text-sm text-primary">
                       +₹{parseFloat(reward.cashback).toFixed(2)}
                     </p>
-                    <p className="text-sm text-yellow-600">+{reward.points} pts</p>
+                    <p className="text-xs text-amber-600">+{reward.points} pts</p>
                   </div>
                 </div>
               ))}
