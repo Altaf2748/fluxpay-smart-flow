@@ -28,6 +28,7 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userTransactions, setUserTransactions] = useState<any[]>([]);
   const [viewingUser, setViewingUser] = useState<any>(null);
+  const [userSearch, setUserSearch] = useState('');
 
   // Balance setting
   const [balanceDialog, setBalanceDialog] = useState(false);
