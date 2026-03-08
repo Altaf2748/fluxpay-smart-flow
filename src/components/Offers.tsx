@@ -160,7 +160,11 @@ const OFFERS: Offer[] = [
   }
 ];
 
-export const Offers = () => {
+interface OffersProps {
+  onOpenStore?: (offer: Offer) => void;
+}
+
+export const Offers: React.FC<OffersProps> = ({ onOpenStore }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [copied, setCopied] = useState(false);
