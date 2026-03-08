@@ -103,6 +103,92 @@ export const Receipts: React.FC<ReceiptsProps> = ({ onBack }) => {
     }
   };
 
+  const downloadInvoicePDF = (txn: Transaction) => {
+    const orig = txn.original_amount || txn.amount;
+    const disc = txn.discount_amount || 0;
+    const cashback = txn.reward_amount || 0;
+    const date = formatDate(txn.created_at);
+
+    // Build a clean HTML invoice
+    const html = `
+      <html>
+      <head>
+        <title>Invoice - ${txn.transaction_ref}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1a1a2e; background: #fff; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; border-bottom: 3px solid #6c63ff; padding-bottom: 20px; }
+          .logo { font-size: 28px; font-weight: 800; color: #6c63ff; letter-spacing: -0.5px; }
+          .logo span { color: #1a1a2e; }
+          .invoice-title { text-align: right; }
+          .invoice-title h2 { font-size: 22px; color: #6c63ff; margin-bottom: 4px; }
+          .invoice-title p { font-size: 12px; color: #666; }
+          .details { display: flex; justify-content: space-between; margin-bottom: 28px; }
+          .details-col p { font-size: 13px; color: #444; line-height: 1.8; }
+          .details-col strong { color: #1a1a2e; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+          th { background: #f0efff; color: #6c63ff; text-align: left; padding: 12px 16px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+          td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #eee; }
+          .amount { text-align: right; font-weight: 600; }
+          .discount { color: #22c55e; }
+          .total-row td { border-top: 2px solid #6c63ff; font-weight: 700; font-size: 16px; background: #f8f7ff; }
+          .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; text-align: center; color: #999; font-size: 11px; }
+          .savings-banner { background: linear-gradient(135deg, #dcfce7, #d1fae5); border: 1px solid #86efac; border-radius: 8px; padding: 12px 20px; text-align: center; margin-bottom: 24px; color: #166534; font-weight: 600; }
+          .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+          .badge-success { background: #dcfce7; color: #166534; }
+          .badge-failed { background: #fee2e2; color: #991b1b; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">Flux<span>Pay</span></div>
+          <div class="invoice-title">
+            <h2>INVOICE</h2>
+            <p>${txn.transaction_ref}</p>
+          </div>
+        </div>
+        <div class="details">
+          <div class="details-col">
+            <p><strong>Merchant:</strong> ${txn.merchant}</p>
+            <p><strong>Date:</strong> ${date}</p>
+            <p><strong>Payment Method:</strong> ${txn.rail}</p>
+          </div>
+          <div class="details-col" style="text-align:right;">
+            <p><strong>Status:</strong> <span class="badge ${txn.status === 'success' ? 'badge-success' : 'badge-failed'}">${txn.status.toUpperCase()}</span></p>
+            ${txn.coupon_code ? `<p><strong>Coupon:</strong> ${txn.coupon_code}</p>` : ''}
+          </div>
+        </div>
+        ${disc > 0 ? `<div class="savings-banner">🎉 You saved ₹${(disc + cashback).toFixed(2)} on this order!</div>` : ''}
+        <table>
+          <thead>
+            <tr><th>Description</th><th class="amount">Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Original Price</td><td class="amount">₹${orig.toFixed(2)}</td></tr>
+            ${disc > 0 ? `<tr><td>Discount${txn.coupon_code ? ` (${txn.coupon_code})` : ''}</td><td class="amount discount">-₹${disc.toFixed(2)}</td></tr>` : ''}
+            <tr class="total-row"><td>Amount Paid</td><td class="amount">₹${txn.amount.toFixed(2)}</td></tr>
+            ${cashback > 0 ? `<tr><td>Cashback Earned</td><td class="amount" style="color:#d97706">+₹${cashback.toFixed(2)}</td></tr>` : ''}
+          </tbody>
+        </table>
+        <div class="footer">
+          <p>Thank you for using FluxPay • This is a computer-generated invoice</p>
+          <p style="margin-top:4px;">Transaction Ref: ${txn.transaction_ref} • Generated on ${new Date().toLocaleDateString('en-IN')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 300);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
