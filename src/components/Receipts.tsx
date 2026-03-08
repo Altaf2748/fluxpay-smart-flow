@@ -421,6 +421,15 @@ export const Receipts: React.FC<ReceiptsProps> = ({ onBack }) => {
                     </p>
                   </div>
                 )}
+
+                <Button
+                  onClick={() => downloadInvoicePDF(selectedTxn)}
+                  className="w-full gap-2"
+                  variant="outline"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Invoice PDF
+                </Button>
               </div>
             );
           })()}
