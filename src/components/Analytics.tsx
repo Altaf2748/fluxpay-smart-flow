@@ -102,12 +102,20 @@ export const Analytics = ({ onViewMonthlyInsights, onViewReceipts }: AnalyticsPr
           <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Analytics</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Track your spending patterns</p>
         </div>
-        {onViewMonthlyInsights && (
-          <Button onClick={onViewMonthlyInsights} variant="outline" className="gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Monthly Insights
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {onViewMonthlyInsights && (
+            <Button onClick={onViewMonthlyInsights} variant="outline" className="gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Monthly Insights
+            </Button>
+          )}
+          {onViewReceipts && (
+            <Button onClick={onViewReceipts} variant="outline" className="gap-2">
+              <Receipt className="w-4 h-4" />
+              Order Receipts
+            </Button>
+          )}
+        </div>
         
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
