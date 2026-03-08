@@ -60,7 +60,7 @@ serve(async (req) => {
     // Get user profile for MPIN verification
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('mpin_hash, failed_mpin_attempts, mpin_locked_until, balance')
+      .select('mpin_hash, failed_mpin_attempts, mpin_locked_until, balance, card_balance')
       .eq('user_id', user.id)
       .single()
 
