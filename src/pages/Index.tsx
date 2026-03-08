@@ -78,7 +78,16 @@ const Index = () => {
         {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}
         {activeTab === 'rewards' && <TabContent key="rewards"><RewardsSection /></TabContent>}
         {activeTab === 'analytics' && <TabContent key="analytics"><Analytics /></TabContent>}
-        {activeTab === 'offers' && <TabContent key="offers"><Offers /></TabContent>}
+        {activeTab === 'offers' && <TabContent key="offers"><Offers onOpenStore={handleOpenStore} /></TabContent>}
+        {activeTab === 'store' && storeOffer && (
+          <TabContent key="store">
+            <BrandStore 
+              offer={storeOffer} 
+              onBack={() => setActiveTab('offers')} 
+              onCheckout={handleStoreCheckout} 
+            />
+          </TabContent>
+        )}
         {activeTab === 'chat' && <TabContent key="chat"><FinanceChatbot /></TabContent>}
       </AnimatePresence>
     </div>
