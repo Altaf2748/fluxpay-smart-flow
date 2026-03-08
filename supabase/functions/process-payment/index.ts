@@ -198,12 +198,13 @@ serve(async (req) => {
       }
 
       // Apply discount to payment amount
-      rewardPercent = offer.reward_percent
+      // Apply discount to payment amount (reward_percent is stored as whole number e.g. 30 = 30%)
+      rewardPercent = offer.reward_percent / 100
       discountAmount = parseFloat(amount) * rewardPercent
-      finalPaymentAmount = parseFloat(amount) - discountAmount
+      finalPaymentAmount = Math.max(parseFloat(amount) - discountAmount, 1) // ensure at least ₹1
       couponApplied = true
       appliedOffer = offer
-      console.log(`Coupon ${couponCode} applied to ${merchant}: ${offer.reward_percent * 100}% discount = ₹${discountAmount}, final amount = ₹${finalPaymentAmount}`)
+      console.log(`Coupon ${couponCode} applied to ${merchant}: ${offer.reward_percent}% discount = ₹${discountAmount}, final amount = ₹${finalPaymentAmount}`)
     }
 
     // Use admin client for atomic balance deduction
