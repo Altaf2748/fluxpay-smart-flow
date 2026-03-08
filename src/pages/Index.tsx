@@ -75,7 +75,8 @@ const Index = () => {
         )}
         {activeTab === 'pay' && <TabContent key="pay"><PaymentFlow /></TabContent>}
         {activeTab === 'p2p' && <TabContent key="p2p"><P2PPayment /></TabContent>}
-        {activeTab === 'history' && <TabContent key="history"><TransactionHistory /></TabContent>}
+        {activeTab === 'history' && <TabContent key="history"><TransactionHistory onViewReceipts={() => setActiveTab('receipts')} /></TabContent>}
+        {activeTab === 'receipts' && <TabContent key="receipts"><Receipts onBack={() => setActiveTab('history')} /></TabContent>}
         {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}
         {activeTab === 'rewards' && <TabContent key="rewards"><RewardsSection /></TabContent>}
         {activeTab === 'analytics' && <TabContent key="analytics"><Analytics /></TabContent>}
