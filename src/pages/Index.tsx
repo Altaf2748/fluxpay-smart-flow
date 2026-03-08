@@ -7,6 +7,7 @@ import { RewardsSection } from '@/components/RewardsSection';
 import { FeaturesOverview } from '@/components/FeaturesOverview';
 import { Settings } from '@/components/Settings';
 import { TransactionHistory } from '@/components/TransactionHistory';
+import { Receipts } from '@/components/Receipts';
 import { Analytics } from '@/components/Analytics';
 import { Offers } from '@/components/Offers';
 import { BrandStore } from '@/components/BrandStore';
