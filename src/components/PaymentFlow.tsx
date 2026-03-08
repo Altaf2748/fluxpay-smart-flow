@@ -46,6 +46,27 @@ export const PaymentFlow = () => {
     fetchOffers();
   }, []);
 
+  // Check for cart checkout data from BrandStore
+  useEffect(() => {
+    const cartData = sessionStorage.getItem('cartCheckout');
+    if (cartData) {
+      try {
+        const { merchant: m, amount: a, couponCode: c } = JSON.parse(cartData);
+        setMerchant(m);
+        setAmount(String(a));
+        setCouponCode(c);
+        setShowRouting(true);
+        sessionStorage.removeItem('cartCheckout');
+        toast({
+          title: "Cart loaded",
+          description: `₹${a.toLocaleString()} from ${m} — coupon ${c} applied`,
+        });
+      } catch (e) {
+        console.error('Failed to parse cart data:', e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // Cleanup scanner on unmount
     return () => {
