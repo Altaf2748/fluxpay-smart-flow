@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Calendar, CreditCard, Smartphone, Users } from 'lucide-react';
+import { TrendingUp, Calendar, CreditCard, Smartphone, Users, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface AnalyticsProps {
   onViewMonthlyInsights?: () => void;
+  onViewReceipts?: () => void;
 }
 
-export const Analytics = ({ onViewMonthlyInsights }: AnalyticsProps) => {
+export const Analytics = ({ onViewMonthlyInsights, onViewReceipts }: AnalyticsProps) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -101,12 +102,20 @@ export const Analytics = ({ onViewMonthlyInsights }: AnalyticsProps) => {
           <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Analytics</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Track your spending patterns</p>
         </div>
-        {onViewMonthlyInsights && (
-          <Button onClick={onViewMonthlyInsights} variant="outline" className="gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Monthly Insights
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {onViewMonthlyInsights && (
+            <Button onClick={onViewMonthlyInsights} variant="outline" className="gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Monthly Insights
+            </Button>
+          )}
+          {onViewReceipts && (
+            <Button onClick={onViewReceipts} variant="outline" className="gap-2">
+              <Receipt className="w-4 h-4" />
+              Order Receipts
+            </Button>
+          )}
+        </div>
         
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>

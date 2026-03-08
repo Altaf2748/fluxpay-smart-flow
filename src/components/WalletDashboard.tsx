@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CreditCard, Smartphone, TrendingUp, Star, Eye, EyeOff, Zap, Plus, BarChart3, Gift, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface WalletDashboardProps {
   onNavigateToPayment?: () => void;
   onNavigateToSettings?: () => void;
   onNavigateToAnalytics?: () => void;
   onNavigateToOffers?: () => void;
+}
+
+interface BalanceChange {
+  type: 'upi' | 'card' | 'total';
+  amount: number; // negative = deducted, positive = received
 }
 
 export const WalletDashboard: React.FC<WalletDashboardProps> = ({ 
@@ -25,6 +31,8 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
   const [loading, setLoading] = useState(true);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [balanceChanges, setBalanceChanges] = useState<BalanceChange[]>([]);
+  const prevBalancesRef = useRef<{ upi: number | null; card: number | null }>({ upi: null, card: null });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,7 +58,27 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       if (error) throw error;
       if (profile) {
         setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
-        setBalances({ upiBalance: profile.balance, cardBalance: profile.card_balance, cardCreditLimit: 0 });
+        
+        const newUpi = profile.balance;
+        const newCard = profile.card_balance;
+        const prevUpi = prevBalancesRef.current.upi;
+        const prevCard = prevBalancesRef.current.card;
+
+        // Detect balance changes (skip initial load)
+        const changes: BalanceChange[] = [];
+        if (prevUpi !== null && newUpi !== null && newUpi !== prevUpi) {
+          changes.push({ type: 'upi', amount: newUpi - prevUpi });
+        }
+        if (prevCard !== null && newCard !== null && newCard !== prevCard) {
+          changes.push({ type: 'card', amount: newCard - prevCard });
+        }
+        if (changes.length > 0) {
+          setBalanceChanges(changes);
+          setTimeout(() => setBalanceChanges([]), 3000);
+        }
+
+        prevBalancesRef.current = { upi: newUpi, card: newCard };
+        setBalances({ upiBalance: newUpi, cardBalance: newCard, cardCreditLimit: 0 });
       }
     } catch (error) {
       console.error('Error fetching balances:', error);
@@ -142,23 +170,75 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                <div className="relative flex items-center gap-3 bg-white/10 rounded-xl p-3">
                   <div className="p-2 bg-white/15 rounded-lg">
                     <Smartphone className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-xs text-primary-foreground/70">UPI</p>
-                    <p className="font-semibold text-sm">{loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}</p>
+                    <motion.p
+                      key={balances.upiBalance}
+                      initial={{ scale: 1.15, color: '#facc15' }}
+                      animate={{ scale: 1, color: '#ffffff' }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className="font-semibold text-sm"
+                    >
+                      {loading ? '₹••••' : `₹${(balances.upiBalance || 0).toLocaleString()}`}
+                    </motion.p>
                   </div>
+                  <AnimatePresence>
+                    {balanceChanges.find(c => c.type === 'upi') && (
+                      <motion.span
+                        initial={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 0, y: -24 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 2, ease: 'easeOut' }}
+                        className={`absolute -top-1 right-2 text-xs font-bold ${
+                          balanceChanges.find(c => c.type === 'upi')!.amount < 0
+                            ? 'text-red-300'
+                            : 'text-emerald-300'
+                        }`}
+                      >
+                        {balanceChanges.find(c => c.type === 'upi')!.amount < 0 ? '' : '+'}
+                        ₹{Math.abs(balanceChanges.find(c => c.type === 'upi')!.amount).toLocaleString()}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                <div className="relative flex items-center gap-3 bg-white/10 rounded-xl p-3">
                   <div className="p-2 bg-white/15 rounded-lg">
                     <CreditCard className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-xs text-primary-foreground/70">Card</p>
-                    <p className="font-semibold text-sm">{loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}</p>
+                    <motion.p
+                      key={balances.cardBalance}
+                      initial={{ scale: 1.15, color: '#facc15' }}
+                      animate={{ scale: 1, color: '#ffffff' }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className="font-semibold text-sm"
+                    >
+                      {loading ? '₹••••' : `₹${(balances.cardBalance || 0).toLocaleString()}`}
+                    </motion.p>
                   </div>
+                  <AnimatePresence>
+                    {balanceChanges.find(c => c.type === 'card') && (
+                      <motion.span
+                        initial={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 0, y: -24 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 2, ease: 'easeOut' }}
+                        className={`absolute -top-1 right-2 text-xs font-bold ${
+                          balanceChanges.find(c => c.type === 'card')!.amount < 0
+                            ? 'text-red-300'
+                            : 'text-emerald-300'
+                        }`}
+                      >
+                        {balanceChanges.find(c => c.type === 'card')!.amount < 0 ? '' : '+'}
+                        ₹{Math.abs(balanceChanges.find(c => c.type === 'card')!.amount).toLocaleString()}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </CardContent>
