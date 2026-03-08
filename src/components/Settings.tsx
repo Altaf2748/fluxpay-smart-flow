@@ -257,14 +257,14 @@ export const Settings = () => {
                   <Check className="w-6 h-6 mr-2" />
                   <span className="font-medium">Card Linked</span>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="bg-muted/40 rounded-lg p-4 space-y-2">
                   <div>
-                    <p className="text-sm text-gray-600">Card Number</p>
-                    <p className="font-medium">**** **** **** {linkedCard.card_last4}</p>
+                    <p className="text-sm text-muted-foreground">Card Number</p>
+                    <p className="font-medium text-foreground">**** **** **** {linkedCard.card_last4}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Expiry</p>
-                    <p className="font-medium">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
+                    <p className="text-sm text-muted-foreground">Expiry</p>
+                    <p className="font-medium text-foreground">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
                   </div>
                 </div>
               </div>

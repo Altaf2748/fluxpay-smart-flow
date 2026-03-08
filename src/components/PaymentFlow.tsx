@@ -455,23 +455,21 @@ export const PaymentFlow = () => {
       <div className="max-w-md mx-auto p-4 sm:p-6">
         <Card className={`text-center glass border-border/50 ${paymentResult.success ? 'border-primary/30' : 'border-destructive/30'}`}>
           <CardContent className="p-6 sm:p-8">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              paymentResult.success ? 'bg-green-500' : 'bg-red-500'
+            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              paymentResult.success ? 'gradient-primary glow' : 'bg-destructive'
             }`}>
               {paymentResult.success ? (
-                <CheckCircle className="w-8 h-8 text-white" />
+                <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
               ) : (
-                <AlertCircle className="w-8 h-8 text-white" />
+                <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-destructive-foreground" />
               )}
             </div>
-            <h2 className={`text-2xl font-bold mb-2 ${
-              paymentResult.success ? 'text-green-800' : 'text-red-800'
+            <h2 className={`text-xl sm:text-2xl font-bold mb-2 ${
+              paymentResult.success ? 'text-foreground' : 'text-destructive'
             }`}>
               {paymentResult.success ? 'Payment Successful!' : 'Payment Failed'}
             </h2>
-            <p className={`mb-4 ${
-              paymentResult.success ? 'text-green-600' : 'text-red-600'
-            }`}>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4">
               {paymentResult.success 
                 ? `₹${paidAmount.toFixed(2)} paid to ${merchant}` 
                 : paymentResult.message
