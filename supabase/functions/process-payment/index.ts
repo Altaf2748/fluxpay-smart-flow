@@ -198,8 +198,8 @@ serve(async (req) => {
       }
 
       // Apply discount to payment amount
-      // Apply discount to payment amount (reward_percent is stored as whole number e.g. 30 = 30%)
-      rewardPercent = offer.reward_percent / 100
+      // Apply discount to payment amount (reward_percent is already a decimal e.g. 0.15 = 15%)
+      rewardPercent = offer.reward_percent
       discountAmount = parseFloat(amount) * rewardPercent
       finalPaymentAmount = Math.max(parseFloat(amount) - discountAmount, 1) // ensure at least ₹1
       couponApplied = true
