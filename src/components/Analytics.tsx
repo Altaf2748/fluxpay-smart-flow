@@ -8,7 +8,11 @@ import { TrendingUp, Calendar, CreditCard, Smartphone, Users } from 'lucide-reac
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export const Analytics = () => {
+interface AnalyticsProps {
+  onViewMonthlyInsights?: () => void;
+}
+
+export const Analytics = ({ onViewMonthlyInsights }: AnalyticsProps) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
