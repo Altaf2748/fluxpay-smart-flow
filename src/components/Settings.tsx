@@ -233,9 +233,9 @@ export const Settings = () => {
                   <Check className="w-6 h-6 mr-2" />
                   <span className="font-medium">UPI Linked</span>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">VPA</p>
-                  <p className="font-medium">{linkedUPI.vpa}</p>
+                <div className="bg-muted rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">VPA</p>
+                  <p className="font-medium text-foreground">{linkedUPI.vpa}</p>
                 </div>
               </div>
             ) : (
