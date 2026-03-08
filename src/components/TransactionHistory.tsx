@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Smartphone, CreditCard, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Smartphone, CreditCard, Clock, CheckCircle, XCircle, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
 
@@ -18,7 +19,11 @@ interface Transaction {
   transaction_type: string;
 }
 
-export const TransactionHistory = () => {
+interface TransactionHistoryProps {
+  onViewReceipts?: () => void;
+}
+
+export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onViewReceipts }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -121,9 +126,17 @@ export const TransactionHistory = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 w-full">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Transaction History</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Your recent payment activity</p>
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Transaction History</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Your recent payment activity</p>
+        </div>
+        {onViewReceipts && (
+          <Button variant="outline" size="sm" onClick={onViewReceipts} className="gap-1.5">
+            <Receipt className="w-4 h-4" />
+            <span className="hidden sm:inline">Receipts</span>
+          </Button>
+        )}
       </div>
 
       {transactions.length === 0 ? (

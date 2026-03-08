@@ -250,13 +250,16 @@ serve(async (req) => {
       }
     }
 
-    // Insert transaction record with final amount
+    // Insert transaction record with final amount and discount details
     const { data: transaction, error } = await supabaseClient
       .from('transactions')
       .insert({
         user_id: user.id,
         merchant,
         amount: finalPaymentAmount,
+        original_amount: parseFloat(amount),
+        discount_amount: discountAmount,
+        coupon_code: couponApplied ? couponCode.trim() : null,
         rail,
         status: paymentResult.success ? 'success' : 'failed',
         transaction_ref: transactionRef,

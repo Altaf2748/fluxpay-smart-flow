@@ -7,6 +7,7 @@ import { RewardsSection } from '@/components/RewardsSection';
 import { FeaturesOverview } from '@/components/FeaturesOverview';
 import { Settings } from '@/components/Settings';
 import { TransactionHistory } from '@/components/TransactionHistory';
+import { Receipts } from '@/components/Receipts';
 import { Analytics } from '@/components/Analytics';
 import { Offers } from '@/components/Offers';
 import { BrandStore } from '@/components/BrandStore';
@@ -74,7 +75,8 @@ const Index = () => {
         )}
         {activeTab === 'pay' && <TabContent key="pay"><PaymentFlow /></TabContent>}
         {activeTab === 'p2p' && <TabContent key="p2p"><P2PPayment /></TabContent>}
-        {activeTab === 'history' && <TabContent key="history"><TransactionHistory /></TabContent>}
+        {activeTab === 'history' && <TabContent key="history"><TransactionHistory onViewReceipts={() => setActiveTab('receipts')} /></TabContent>}
+        {activeTab === 'receipts' && <TabContent key="receipts"><Receipts onBack={() => setActiveTab('history')} /></TabContent>}
         {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}
         {activeTab === 'rewards' && <TabContent key="rewards"><RewardsSection /></TabContent>}
         {activeTab === 'analytics' && <TabContent key="analytics"><Analytics /></TabContent>}
