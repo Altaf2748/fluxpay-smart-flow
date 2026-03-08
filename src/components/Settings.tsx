@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { CreditCard, Smartphone, Plus, Check, LogOut as LogOutIcon, Sun, Moon } from 'lucide-react';
+import { CreditCard, Smartphone, Plus, Check, LogOut as LogOutIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MPINSetup } from './MPINSetup';
@@ -176,39 +175,9 @@ export const Settings = () => {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Settings</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Manage your payment methods and security</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <p className="text-sm sm:text-base text-gray-600">Manage your payment methods and security</p>
       </div>
-
-      {/* Theme Toggle */}
-      <Card className="glass">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sun className="w-5 h-5 text-amber-500 dark:hidden" />
-            <Moon className="w-5 h-5 text-primary hidden dark:block" />
-            Appearance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground">Dark Mode</p>
-              <p className="text-xs text-muted-foreground">Switch between light and dark themes</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Sun className="w-4 h-4 text-muted-foreground" />
-              <Switch
-                checked={document.documentElement.classList.contains('dark')}
-                onCheckedChange={(checked) => {
-                  document.documentElement.classList.toggle('dark', checked);
-                  localStorage.setItem('theme', checked ? 'dark' : 'light');
-                }}
-              />
-              <Moon className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* MPIN Setup or Reset */}
       {!mpinSet ? (
@@ -222,7 +191,7 @@ export const Settings = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Smartphone className="w-5 h-5 mr-2 text-primary" />
+              <Smartphone className="w-5 h-5 mr-2 text-blue-600" />
               Link UPI VPA
             </CardTitle>
           </CardHeader>
@@ -233,9 +202,9 @@ export const Settings = () => {
                   <Check className="w-6 h-6 mr-2" />
                   <span className="font-medium">UPI Linked</span>
                 </div>
-                <div className="bg-muted rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">VPA</p>
-                  <p className="font-medium text-foreground">{linkedUPI.vpa}</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">VPA</p>
+                  <p className="font-medium">{linkedUPI.vpa}</p>
                 </div>
               </div>
             ) : (
@@ -277,7 +246,7 @@ export const Settings = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <CreditCard className="w-5 h-5 mr-2 text-accent" />
+              <CreditCard className="w-5 h-5 mr-2 text-purple-600" />
               Link Card
             </CardTitle>
           </CardHeader>
@@ -288,14 +257,14 @@ export const Settings = () => {
                   <Check className="w-6 h-6 mr-2" />
                   <span className="font-medium">Card Linked</span>
                 </div>
-                <div className="bg-muted rounded-lg p-4 space-y-2">
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Card Number</p>
-                    <p className="font-medium text-foreground">**** **** **** {linkedCard.card_last4}</p>
+                    <p className="text-sm text-gray-600">Card Number</p>
+                    <p className="font-medium">**** **** **** {linkedCard.card_last4}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Expiry</p>
-                    <p className="font-medium text-foreground">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
+                    <p className="text-sm text-gray-600">Expiry</p>
+                    <p className="font-medium">{linkedCard.expiry_month.toString().padStart(2, '0')}/{linkedCard.expiry_year}</p>
                   </div>
                 </div>
               </div>
