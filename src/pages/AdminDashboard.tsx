@@ -268,6 +268,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleRemoveAdmin = async (admin: any) => {
+    if (!confirm(`Remove admin role from ${admin.first_name || ''} ${admin.last_name || ''}?`)) return;
+    const { error } = await supabase.from('user_roles').delete().eq('id', admin.id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Admin Removed', description: `${admin.first_name || 'User'} is no longer an admin.` });
+      fetchAdmins();
+    }
+  };
+
   const resetOfferForm = () => {
     setOfferForm({ title: '', description: '', mcc: '', reward_percent: '', redeem_code: '', terms: '', valid_to: '2099-12-31' });
   };
@@ -602,9 +613,21 @@ const AdminDashboard = () => {
                             <p className="text-xs text-muted-foreground font-mono">{a.user_id.slice(0, 8)}...</p>
                           </div>
                         </div>
-                        <Badge className="gradient-primary text-primary-foreground border-0">
-                          <ShieldCheck className="w-3 h-3 mr-1" /> Admin
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className="gradient-primary text-primary-foreground border-0">
+                            <ShieldCheck className="w-3 h-3 mr-1" /> Admin
+                          </Badge>
+                          {a.user_id !== user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleRemoveAdmin(a)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
