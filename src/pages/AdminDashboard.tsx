@@ -303,22 +303,25 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center glow">
+              <Shield className="w-5 h-5 text-primary-foreground" />
+            </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
               <p className="text-sm text-muted-foreground">Manage users, offers, and system settings</p>
             </div>
           </div>
-          <Button variant="outline" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to App
+          <Button variant="outline" size="sm" className="glass border-border/50" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
         </div>
 
         <Tabs defaultValue="users">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 bg-muted/60 p-1 rounded-xl">
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Users</TabsTrigger>
             <TabsTrigger value="offers"><Gift className="w-4 h-4 mr-1" /> Offers</TabsTrigger>
             <TabsTrigger value="requests"><KeyRound className="w-4 h-4 mr-1" /> Requests {adminRequests.filter(r => r.status === 'pending').length > 0 && <Badge variant="destructive" className="ml-1 text-xs">{adminRequests.filter(r => r.status === 'pending').length}</Badge>}</TabsTrigger>
