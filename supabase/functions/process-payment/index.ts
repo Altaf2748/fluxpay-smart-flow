@@ -287,7 +287,8 @@ serve(async (req) => {
       console.error('Transaction insert error:', error)
       // If we already deducted balance, reverse it
       if (paymentResult.success) {
-        const { error: reversalError } = await supabaseAdmin.rpc('atomic_deduct_balance', {
+        const rpcName = rail === 'CARD' ? 'atomic_deduct_card_balance' : 'atomic_deduct_balance'
+        const { error: reversalError } = await supabaseAdmin.rpc(rpcName, {
           p_user_id: user.id,
           p_amount: -finalPaymentAmount,
         })
