@@ -303,22 +303,25 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center glow">
+              <Shield className="w-5 h-5 text-primary-foreground" />
+            </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
               <p className="text-sm text-muted-foreground">Manage users, offers, and system settings</p>
             </div>
           </div>
-          <Button variant="outline" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to App
+          <Button variant="outline" size="sm" className="glass border-border/50" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
         </div>
 
         <Tabs defaultValue="users">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 bg-muted/60 p-1 rounded-xl">
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-1" /> Users</TabsTrigger>
             <TabsTrigger value="offers"><Gift className="w-4 h-4 mr-1" /> Offers</TabsTrigger>
             <TabsTrigger value="requests"><KeyRound className="w-4 h-4 mr-1" /> Requests {adminRequests.filter(r => r.status === 'pending').length > 0 && <Badge variant="destructive" className="ml-1 text-xs">{adminRequests.filter(r => r.status === 'pending').length}</Badge>}</TabsTrigger>
@@ -430,155 +433,176 @@ const AdminDashboard = () => {
 
           {/* OFFERS TAB */}
           <TabsContent value="offers">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Offers ({offers.length})</CardTitle>
-                  <Button onClick={() => { resetOfferForm(); setEditingOffer(null); setOfferDialog(true); }}>
+            <Card className="glass border-border/50">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg font-semibold">Offers ({offers.length})</CardTitle>
+                  <Button size="sm" onClick={() => { resetOfferForm(); setEditingOffer(null); setOfferDialog(true); }}>
                     <Plus className="w-4 h-4 mr-2" /> Add Offer
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>MCC</TableHead>
-                      <TableHead>Reward %</TableHead>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              <CardContent className="p-0 sm:p-6 pt-0">
+                {offers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Gift className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                    <p className="text-sm text-muted-foreground">No offers created yet</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 px-4 pb-4 sm:px-0 sm:pb-0">
                     {offers.map((o) => (
-                      <TableRow key={o.id}>
-                        <TableCell className="font-medium">{o.title}</TableCell>
-                        <TableCell>{o.mcc}</TableCell>
-                        <TableCell>{o.reward_percent}%</TableCell>
-                        <TableCell><code className="text-xs">{o.redeem_code}</code></TableCell>
-                        <TableCell>
+                      <div
+                        key={o.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-xl gradient-gold flex items-center justify-center text-sm font-bold text-primary-foreground flex-shrink-0">
+                            {o.reward_percent}%
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">{o.title}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>MCC: {o.mcc}</span>
+                              {o.redeem_code && <span>• Code: <code className="bg-muted px-1 rounded">{o.redeem_code}</code></span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 pl-13 sm:pl-0 flex-shrink-0">
                           <div className="flex items-center gap-2">
-                            <Switch
-                              checked={o.active}
-                              onCheckedChange={() => handleToggleOffer(o)}
-                            />
-                            <span className={`text-xs font-medium ${o.active ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                            <Switch checked={o.active} onCheckedChange={() => handleToggleOffer(o)} />
+                            <span className={`text-xs font-medium w-14 ${o.active ? 'text-primary' : 'text-muted-foreground'}`}>
                               {o.active ? 'Active' : 'Inactive'}
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => openEditOffer(o)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteOffer(o.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditOffer(o)}>
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteOffer(o.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* REQUESTS TAB */}
           <TabsContent value="requests">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Requests ({adminRequests.filter(r => r.status === 'pending').length} pending)</CardTitle>
+            <Card className="glass border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold">
+                  User Requests
+                  {adminRequests.filter(r => r.status === 'pending').length > 0 && (
+                    <Badge variant="destructive" className="ml-2 text-xs">{adminRequests.filter(r => r.status === 'pending').length} pending</Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              <CardContent className="p-0 sm:p-6 pt-0">
+                {adminRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <KeyRound className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                    <p className="text-sm text-muted-foreground">No requests yet</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 px-4 pb-4 sm:px-0 sm:pb-0">
                     {adminRequests.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.user_name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {r.request_type === 'password_reset' ? 'Password Reset' : 'eKYC Verification'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm max-w-[200px] truncate">{r.message || '—'}</TableCell>
-                        <TableCell>
-                          <Badge variant={r.status === 'approved' ? 'default' : r.status === 'rejected' ? 'destructive' : 'secondary'}>
+                      <div
+                        key={r.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            r.status === 'approved' ? 'bg-primary/10 text-primary' : r.status === 'rejected' ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-600'
+                          }`}>
+                            {r.status === 'approved' ? <CheckCircle className="w-5 h-5" /> : r.status === 'rejected' ? <XCircle className="w-5 h-5" /> : <KeyRound className="w-5 h-5" />}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-foreground">{r.user_name}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Badge variant="outline" className="text-[10px] h-5">
+                                {r.request_type === 'password_reset' ? 'Password Reset' : 'eKYC'}
+                              </Badge>
+                              <span>{new Date(r.created_at).toLocaleDateString()}</span>
+                              {r.message && <span className="truncate max-w-[150px]">• {r.message}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pl-13 sm:pl-0 flex-shrink-0">
+                          <Badge variant={r.status === 'approved' ? 'default' : r.status === 'rejected' ? 'destructive' : 'secondary'} className="text-xs">
                             {r.status}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">{new Date(r.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
                           {r.status === 'pending' && (
-                            <div className="flex gap-1">
-                              <Button size="sm" variant="ghost" className="text-green-600" onClick={() => handleApproveRequest(r)}>
-                                <CheckCircle className="w-4 h-4" />
+                            <>
+                              <Button size="sm" variant="outline" className="h-8 text-xs text-primary border-primary/30 hover:bg-primary/10" onClick={() => handleApproveRequest(r)}>
+                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> Approve
                               </Button>
-                              <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleRejectRequest(r)}>
-                                <XCircle className="w-4 h-4" />
+                              <Button size="sm" variant="outline" className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleRejectRequest(r)}>
+                                <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
                               </Button>
-                            </div>
+                            </>
                           )}
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                      </div>
                     ))}
-                    {adminRequests.length === 0 && (
-                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No requests yet</TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* ADMINS TAB */}
           <TabsContent value="admins">
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Management</CardTitle>
+            <Card className="glass border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold">Admin Management</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter user email to make admin"
-                    value={adminEmail}
-                    onChange={(e) => setAdminEmail(e.target.value)}
-                  />
-                  <Button onClick={handleAddAdmin}>
+                  <div className="relative flex-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Enter user email to make admin..."
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      className="pl-9 bg-muted/40 border-border/50"
+                    />
+                  </div>
+                  <Button size="sm" onClick={handleAddAdmin}>
                     <UserPlus className="w-4 h-4 mr-2" /> Add Admin
                   </Button>
                 </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Role</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+
+                {admins.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Shield className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                    <p className="text-sm text-muted-foreground">No admins configured</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
                     {admins.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell>{a.first_name || ''} {a.last_name || ''}</TableCell>
-                        <TableCell className="font-mono text-xs">{a.user_id}</TableCell>
-                        <TableCell><Badge>admin</Badge></TableCell>
-                      </TableRow>
+                      <div
+                        key={a.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground">
+                            {(a.first_name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm text-foreground">{a.first_name || ''} {a.last_name || ''}</p>
+                            <p className="text-xs text-muted-foreground font-mono">{a.user_id.slice(0, 8)}...</p>
+                          </div>
+                        </div>
+                        <Badge className="gradient-primary text-primary-foreground border-0">
+                          <ShieldCheck className="w-3 h-3 mr-1" /> Admin
+                        </Badge>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
