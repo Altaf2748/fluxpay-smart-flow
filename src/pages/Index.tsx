@@ -9,6 +9,7 @@ import { Settings } from '@/components/Settings';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { Receipts } from '@/components/Receipts';
 import { Analytics } from '@/components/Analytics';
+import { MonthlySpendingCharts } from '@/components/MonthlySpendingCharts';
 import { Offers } from '@/components/Offers';
 import { BrandStore } from '@/components/BrandStore';
 import { P2PPayment } from '@/components/P2PPayment';
