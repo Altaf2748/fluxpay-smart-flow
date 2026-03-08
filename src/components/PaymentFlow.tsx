@@ -565,7 +565,7 @@ export const PaymentFlow = () => {
             </TabsList>
             
             <TabsContent value="search" className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Merchant or Recipient
               </label>
               <Input
