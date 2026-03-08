@@ -452,9 +452,9 @@ export const PaymentFlow = () => {
 
   if (paymentComplete && paymentResult) {
     return (
-      <div className="max-w-md mx-auto p-6">
-        <Card className={`text-center ${paymentResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <CardContent className="p-8">
+      <div className="max-w-md mx-auto p-4 sm:p-6">
+        <Card className={`text-center glass border-border/50 ${paymentResult.success ? 'border-primary/30' : 'border-destructive/30'}`}>
+          <CardContent className="p-6 sm:p-8">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
               paymentResult.success ? 'bg-green-500' : 'bg-red-500'
             }`}>
