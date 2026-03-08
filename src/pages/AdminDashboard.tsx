@@ -458,13 +458,15 @@ const AdminDashboard = () => {
                         <TableCell>{o.reward_percent}%</TableCell>
                         <TableCell><code className="text-xs">{o.redeem_code}</code></TableCell>
                         <TableCell>
-                          <Badge
-                            variant={o.active ? 'default' : 'secondary'}
-                            className="cursor-pointer"
-                            onClick={() => handleToggleOffer(o)}
-                          >
-                            {o.active ? 'Active' : 'Inactive'}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={o.active}
+                              onCheckedChange={() => handleToggleOffer(o)}
+                            />
+                            <span className={`text-xs font-medium ${o.active ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                              {o.active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
