@@ -476,34 +476,34 @@ export const PaymentFlow = () => {
               }
             </p>
             {paymentResult.success && paymentResult.rewards && (
-              <div className="bg-white rounded-lg p-4 mb-6">
+              <div className="bg-muted/40 rounded-xl p-4 mb-6 text-left">
                 {paymentResult.rewards.couponApplied && (
                   <>
-                    <div className="flex items-center justify-between text-sm mb-3 pb-3 border-b">
+                    <div className="flex items-center justify-between text-sm mb-3 pb-3 border-b border-border/50">
                       <span className="flex items-center gap-2">
-                        <Gift className="w-4 h-4 text-green-600" />
+                        <Gift className="w-4 h-4 text-primary" />
                         Coupon Applied
                       </span>
-                      <span className="font-semibold text-green-600">
+                      <span className="font-semibold text-primary">
                         {paymentResult.rewards.offerTitle}
                       </span>
                     </div>
                     {paymentResult.rewards.originalAmount && paymentResult.rewards.discountAmount > 0 && (
                       <>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="text-gray-600">Original Amount:</span>
-                          <span className="font-medium text-gray-500 line-through">
+                          <span className="text-muted-foreground">Original Amount:</span>
+                          <span className="font-medium text-muted-foreground line-through">
                             ₹{paymentResult.rewards.originalAmount.toFixed(2)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm mb-3 pb-3 border-b">
-                          <span className="text-green-600 font-medium">Discount Applied:</span>
-                          <span className="font-semibold text-green-600">
+                        <div className="flex justify-between text-sm mb-3 pb-3 border-b border-border/50">
+                          <span className="text-primary font-medium">Discount Applied:</span>
+                          <span className="font-semibold text-primary">
                             -₹{paymentResult.rewards.discountAmount.toFixed(2)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-base mb-3 pb-3 border-b">
-                          <span className="font-bold text-gray-900">Amount Paid:</span>
+                        <div className="flex justify-between text-base mb-3 pb-3 border-b border-border/50">
+                          <span className="font-bold text-foreground">Amount Paid:</span>
                           <span className="font-bold text-primary">
                             ₹{paymentResult.rewards.finalAmount.toFixed(2)}
                           </span>
@@ -513,26 +513,26 @@ export const PaymentFlow = () => {
                   </>
                 )}
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Cashback Earned</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="text-muted-foreground">Cashback Earned</span>
+                  <span className="font-semibold text-primary">
                     ₹{paymentResult.rewards.cashback.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Reward Points</span>
-                  <span className="font-semibold text-yellow-600">
+                  <span className="text-muted-foreground">Reward Points</span>
+                  <span className="font-semibold text-amber-500">
                     +{paymentResult.rewards.points} pts
                   </span>
                 </div>
                 {paymentResult.transaction && (
-                  <div className="flex justify-between text-sm mt-2 pt-2 border-t">
-                    <span>Transaction ID</span>
-                    <span className="font-mono text-xs">{paymentResult.transaction.transaction_ref}</span>
+                  <div className="flex justify-between text-sm mt-2 pt-2 border-t border-border/50">
+                    <span className="text-muted-foreground">Transaction ID</span>
+                    <span className="font-mono text-xs text-muted-foreground">{paymentResult.transaction.transaction_ref}</span>
                   </div>
                 )}
               </div>
             )}
-            <Button onClick={resetPayment}>
+            <Button onClick={resetPayment} className="w-full">
               Make Another Payment
             </Button>
           </CardContent>
