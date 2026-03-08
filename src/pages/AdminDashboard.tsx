@@ -236,18 +236,42 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAddAdmin = async () => {
+  const verifyAdminPassword = async (password: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke('verify-admin-password', {
+      body: { password }
+    });
+    if (error || !data?.valid) return false;
+    return true;
+  };
+
+  const handleAdminPasswordSubmit = async () => {
+    if (!adminPassword.trim()) return;
+    const valid = await verifyAdminPassword(adminPassword);
+    if (!valid) {
+      toast({ title: 'Invalid Password', description: 'The secret password is incorrect.', variant: 'destructive' });
+      setAdminPassword('');
+      return;
+    }
+    setPasswordDialog(false);
+    setAdminPassword('');
+
+    if (pendingAdminAction?.type === 'add') {
+      await executeAddAdmin();
+    } else if (pendingAdminAction?.type === 'remove') {
+      await executeRemoveAdmin(pendingAdminAction.payload);
+    }
+    setPendingAdminAction(null);
+  };
+
+  const handleAddAdmin = () => {
     if (!adminEmail.trim()) return;
-    // Look up user by email from profiles — we need to find user_id
-    // Since we can't query auth.users, we'll use an edge function approach
-    // For now, search profiles by matching — but profiles don't store email
-    // We need to use a different approach: the admin enters the user_id or we search
+    setPendingAdminAction({ type: 'add' });
+    setPasswordDialog(true);
+  };
+
+  const executeAddAdmin = async () => {
     toast({ title: 'Looking up user...', description: 'Searching for the user.' });
 
-    // We'll search all profiles and match — admin can see all
-    const { data: allProfiles } = await supabase.from('profiles').select('user_id, first_name, last_name');
-    // We can't get email from profiles. Let's use supabase admin API via edge function
-    // For simplicity, let's create an edge function for this
     const { data, error } = await supabase.functions.invoke('admin-lookup-user', {
       body: { email: adminEmail }
     });
@@ -271,8 +295,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleRemoveAdmin = async (admin: any) => {
-    if (!confirm(`Remove admin role from ${admin.first_name || ''} ${admin.last_name || ''}?`)) return;
+  const handleRemoveAdmin = (admin: any) => {
+    setPendingAdminAction({ type: 'remove', payload: admin });
+    setPasswordDialog(true);
+  };
+
+  const executeRemoveAdmin = async (admin: any) => {
     const { error } = await supabase.from('user_roles').delete().eq('id', admin.id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
