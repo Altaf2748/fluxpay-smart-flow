@@ -101,6 +101,12 @@ export const Analytics = ({ onViewMonthlyInsights }: AnalyticsProps) => {
           <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Analytics</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Track your spending patterns</p>
         </div>
+        {onViewMonthlyInsights && (
+          <Button onClick={onViewMonthlyInsights} variant="outline" className="gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Monthly Insights
+          </Button>
+        )}
         
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
