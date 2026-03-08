@@ -125,9 +125,17 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onViewRe
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 w-full">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Transaction History</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Your recent payment activity</p>
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Transaction History</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Your recent payment activity</p>
+        </div>
+        {onViewReceipts && (
+          <Button variant="outline" size="sm" onClick={onViewReceipts} className="gap-1.5">
+            <Receipt className="w-4 h-4" />
+            <span className="hidden sm:inline">Receipts</span>
+          </Button>
+        )}
       </div>
 
       {transactions.length === 0 ? (
