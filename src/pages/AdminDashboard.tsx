@@ -268,6 +268,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleRemoveAdmin = async (admin: any) => {
+    if (!confirm(`Remove admin role from ${admin.first_name || ''} ${admin.last_name || ''}?`)) return;
+    const { error } = await supabase.from('user_roles').delete().eq('id', admin.id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Admin Removed', description: `${admin.first_name || 'User'} is no longer an admin.` });
+      fetchAdmins();
+    }
+  
+
   const resetOfferForm = () => {
     setOfferForm({ title: '', description: '', mcc: '', reward_percent: '', redeem_code: '', terms: '', valid_to: '2099-12-31' });
   };
