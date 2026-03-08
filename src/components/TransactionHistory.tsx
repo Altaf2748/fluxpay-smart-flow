@@ -111,106 +111,70 @@ export const TransactionHistory = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 w-full">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Transaction History</h1>
-        <p className="text-gray-600">Your recent payment activity</p>
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 w-full">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Transaction History</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Your recent payment activity</p>
       </div>
 
       {transactions.length === 0 ? (
-        <Card>
+        <Card className="glass border-border/50">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <CreditCard className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 bg-muted/60 rounded-full flex items-center justify-center mb-4">
+              <CreditCard className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
-            <p className="text-gray-500 text-center">
+            <h3 className="text-lg font-medium text-foreground mb-2">No transactions yet</h3>
+            <p className="text-muted-foreground text-center text-sm">
               Your payment history will appear here once you make your first transaction.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {transactions.map((txn) => (
-            <Card key={txn.id}>
-              <CardContent className="p-6 overflow-hidden">
-                <div className="flex items-center justify-between">
-                  {/* Left column: icon + texts */}
-                  <div className="flex items-start space-x-4 min-w-0">
-                    <div
-                      className={`p-2 rounded-lg mt-1 ${
-                        txn.rail === 'UPI' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                      }`}
-                    >
-                      {txn.rail === 'UPI' ? (
-                        <Smartphone className="w-5 h-5" />
-                      ) : (
-                        <CreditCard className="w-5 h-5" />
-                      )}
+            <Card key={txn.id} className="glass border-border/50 hover:bg-muted/30 transition-colors">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start sm:items-center justify-between gap-3">
+                  {/* Left: icon + info */}
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className={`p-2 rounded-xl flex-shrink-0 ${
+                      txn.rail === 'UPI' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent-foreground'
+                    }`}>
+                      {txn.rail === 'UPI' ? <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" /> : <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </div>
-
                     <div className="min-w-0 flex-1">
-                      {/* Merchant / title */}
-                      <h3 className="font-semibold text-gray-900 truncate">
+                      <h3 className="font-semibold text-sm sm:text-base text-foreground truncate">
                         {isReceivedTransaction(txn) ? `From ${txn.merchant}` : txn.merchant}
                       </h3>
-
-                      {/* Three separate lines:
-                          1) date
-                          2) payment mode (rail) and Received badge (if applicable)
-                          3) transaction id (single-line, smaller font to fit)
-                      */}
-                      <div className="mt-1 text-sm text-gray-500 space-y-1">
-                        {/* Line 1: date */}
-                        <div className="truncate">
-                          {new Date(txn.created_at).toLocaleString()}
-                        </div>
-
-                        {/* Line 2: payment mode and Received badge */}
-                        <div className="flex items-center space-x-2">
-                          <span className="truncate">{txn.rail}</span>
-                          {isReceivedTransaction(txn) && (
-                            <Badge variant="secondary" className="text-xs">
-                              Received
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Line 3: transaction id - keep on one line, smaller font
-                            - whitespace-nowrap + overflow-hidden ensures single line
-                            - increase max-w on larger screens so ID fits better
-                        */}
-                        <div
-                          className="text-xs font-mono text-gray-600 whitespace-nowrap overflow-hidden"
-                          style={{ maxWidth: '20rem' }}
-                        >
-                          {/* Option A: reduce font and allow whole ID to show on most screens.
-                              If you still want the whole ID guaranteed visible, consider
-                              using overflowX: 'auto' here so users can scroll to see it.
-                          */}
-                          {txn.transaction_ref}
-                        </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                        <span>{new Date(txn.created_at).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{txn.rail}</span>
+                        {isReceivedTransaction(txn) && (
+                          <Badge variant="secondary" className="text-[10px] h-4">Received</Badge>
+                        )}
                       </div>
+                      <p className="text-[10px] sm:text-xs font-mono text-muted-foreground/70 mt-1 truncate">
+                        {txn.transaction_ref}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Right column: amount + status - don't shrink */}
-                  <div className="text-right flex-shrink-0 ml-4">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span
-                        className={`text-lg font-semibold ${
-                          isReceivedTransaction(txn) ? 'text-green-600' : 'text-gray-900'
-                        }`}
-                      >
+                  {/* Right: amount + status */}
+                  <div className="text-right flex-shrink-0">
+                    <div className="flex items-center gap-1.5 justify-end mb-1">
+                      <span className={`text-base sm:text-lg font-semibold ${
+                        isReceivedTransaction(txn) ? 'text-primary' : 'text-foreground'
+                      }`}>
                         {isReceivedTransaction(txn) ? '+' : ''}₹{txn.amount.toFixed(2)}
                       </span>
                       {getStatusIcon(txn.status)}
