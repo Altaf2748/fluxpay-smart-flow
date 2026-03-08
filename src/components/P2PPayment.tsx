@@ -514,17 +514,21 @@ export const P2PPayment = () => {
           )}
 
           {step === 'result' && result && (
-            <Card>
+            <Card className="glass border-border/50">
               <CardHeader className="text-center">
                 {result.success ? (
                   <>
-                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <CardTitle className="text-green-600">Payment Successful</CardTitle>
+                    <div className="w-16 h-16 rounded-full gradient-primary glow flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <CardTitle className="text-primary">Payment Successful</CardTitle>
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <CardTitle className="text-red-600">Payment Failed</CardTitle>
+                    <div className="w-16 h-16 rounded-full bg-destructive flex items-center justify-center mx-auto mb-4">
+                      <XCircle className="w-8 h-8 text-destructive-foreground" />
+                    </div>
+                    <CardTitle className="text-destructive">Payment Failed</CardTitle>
                   </>
                 )}
               </CardHeader>

@@ -581,7 +581,7 @@ export const PaymentFlow = () => {
               />
               
               {/* Merchant grid */}
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-muted/40 rounded-lg border border-border/50">
                 {filteredMerchants.slice(0, 20).map((merchantName) => (
                   <button
                     key={merchantName}
@@ -592,8 +592,8 @@ export const PaymentFlow = () => {
                     }}
                     className={`px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-md transition-all ${
                       merchant === merchantName
-                        ? 'bg-blue-600 text-white font-medium'
-                        : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
+                        ? 'bg-primary text-primary-foreground font-medium'
+                        : 'bg-background text-foreground hover:bg-primary/10 border border-border/50'
                     }`}
                     disabled={paymentLoading}
                   >
