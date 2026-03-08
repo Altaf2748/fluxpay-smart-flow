@@ -800,6 +800,34 @@ const AdminDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Admin Password Dialog */}
+      <Dialog open={passwordDialog} onOpenChange={(open) => { if (!open) { setPasswordDialog(false); setAdminPassword(''); setPendingAdminAction(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" /> Secret Password Required</DialogTitle>
+            <DialogDescription>
+              Enter the admin secret password to {pendingAdminAction?.type === 'add' ? 'add a new admin' : 'remove an admin'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Secret Password</Label>
+              <Input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Enter secret password..."
+                onKeyDown={(e) => e.key === 'Enter' && handleAdminPasswordSubmit()}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setPasswordDialog(false); setAdminPassword(''); setPendingAdminAction(null); }}>Cancel</Button>
+              <Button onClick={handleAdminPasswordSubmit}>Confirm</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
