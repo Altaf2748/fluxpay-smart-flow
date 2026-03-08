@@ -29,6 +29,7 @@ const TabContent = ({ children }: { children: React.ReactNode }) => (
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [storeOffer, setStoreOffer] = useState<any>(null);
   const { user } = useAuth();
 
   React.useEffect(() => {
@@ -38,6 +39,16 @@ const Index = () => {
       sessionStorage.removeItem('targetTab');
     }
   }, []);
+
+  const handleOpenStore = (offer: any) => {
+    setStoreOffer(offer);
+    setActiveTab('store');
+  };
+
+  const handleStoreCheckout = (merchant: string, amount: number, couponCode: string) => {
+    sessionStorage.setItem('cartCheckout', JSON.stringify({ merchant, amount, couponCode }));
+    setActiveTab('pay');
+  };
 
   return (
     <div className="min-h-screen bg-background">
