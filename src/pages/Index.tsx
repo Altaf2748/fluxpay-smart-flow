@@ -9,6 +9,7 @@ import { Settings } from '@/components/Settings';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { Receipts } from '@/components/Receipts';
 import { Analytics } from '@/components/Analytics';
+import { MonthlySpendingCharts } from '@/components/MonthlySpendingCharts';
 import { Offers } from '@/components/Offers';
 import { BrandStore } from '@/components/BrandStore';
 import { P2PPayment } from '@/components/P2PPayment';
@@ -79,7 +80,8 @@ const Index = () => {
         {activeTab === 'receipts' && <TabContent key="receipts"><Receipts onBack={() => setActiveTab('history')} /></TabContent>}
         {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}
         {activeTab === 'rewards' && <TabContent key="rewards"><RewardsSection /></TabContent>}
-        {activeTab === 'analytics' && <TabContent key="analytics"><Analytics /></TabContent>}
+        {activeTab === 'analytics' && <TabContent key="analytics"><Analytics onViewMonthlyInsights={() => setActiveTab('monthly-insights')} /></TabContent>}
+        {activeTab === 'monthly-insights' && <TabContent key="monthly-insights"><MonthlySpendingCharts onBack={() => setActiveTab('analytics')} /></TabContent>}
         {activeTab === 'offers' && <TabContent key="offers"><Offers onOpenStore={handleOpenStore} /></TabContent>}
         {activeTab === 'store' && storeOffer && (
           <TabContent key="store">
