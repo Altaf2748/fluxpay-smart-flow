@@ -58,7 +58,27 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({
       if (error) throw error;
       if (profile) {
         setUserName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User');
-        setBalances({ upiBalance: profile.balance, cardBalance: profile.card_balance, cardCreditLimit: 0 });
+        
+        const newUpi = profile.balance;
+        const newCard = profile.card_balance;
+        const prevUpi = prevBalancesRef.current.upi;
+        const prevCard = prevBalancesRef.current.card;
+
+        // Detect balance changes (skip initial load)
+        const changes: BalanceChange[] = [];
+        if (prevUpi !== null && newUpi !== null && newUpi !== prevUpi) {
+          changes.push({ type: 'upi', amount: newUpi - prevUpi });
+        }
+        if (prevCard !== null && newCard !== null && newCard !== prevCard) {
+          changes.push({ type: 'card', amount: newCard - prevCard });
+        }
+        if (changes.length > 0) {
+          setBalanceChanges(changes);
+          setTimeout(() => setBalanceChanges([]), 3000);
+        }
+
+        prevBalancesRef.current = { upi: newUpi, card: newCard };
+        setBalances({ upiBalance: newUpi, cardBalance: newCard, cardCreditLimit: 0 });
       }
     } catch (error) {
       console.error('Error fetching balances:', error);
