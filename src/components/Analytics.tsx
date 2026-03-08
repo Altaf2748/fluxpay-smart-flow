@@ -10,9 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface AnalyticsProps {
   onViewMonthlyInsights?: () => void;
+  onViewReceipts?: () => void;
 }
 
-export const Analytics = ({ onViewMonthlyInsights }: AnalyticsProps) => {
+export const Analytics = ({ onViewMonthlyInsights, onViewReceipts }: AnalyticsProps) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
