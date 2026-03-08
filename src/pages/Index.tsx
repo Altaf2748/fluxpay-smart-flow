@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Hero } from '@/components/Hero';
 import { WalletDashboard } from '@/components/WalletDashboard';
 import { PaymentFlow } from '@/components/PaymentFlow';
@@ -12,6 +13,18 @@ import { P2PPayment } from '@/components/P2PPayment';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { FinanceChatbot } from '@/components/FinanceChatbot';
+
+const pageVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+};
+
+const TabContent = ({ children }: { children: React.ReactNode }) => (
+  <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit">
+    {children}
+  </motion.div>
+);
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -29,29 +42,33 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      {activeTab === 'home' && (
-        <>
-          <Hero />
-          <FeaturesOverview />
-        </>
-      )}
-      
-      {activeTab === 'dashboard' && (
-        <WalletDashboard 
-          onNavigateToPayment={() => setActiveTab('pay')}
-          onNavigateToSettings={() => setActiveTab('settings')}
-          onNavigateToAnalytics={() => setActiveTab('analytics')}
-          onNavigateToOffers={() => setActiveTab('offers')}
-        />
-      )}
-      {activeTab === 'pay' && <PaymentFlow />}
-      {activeTab === 'p2p' && <P2PPayment />}
-      {activeTab === 'history' && <TransactionHistory />}
-      {activeTab === 'settings' && <Settings />}
-      {activeTab === 'rewards' && <RewardsSection />}
-      {activeTab === 'analytics' && <Analytics />}
-      {activeTab === 'offers' && <Offers />}
-      {activeTab === 'chat' && <FinanceChatbot />}
+      <AnimatePresence mode="wait">
+        {activeTab === 'home' && (
+          <TabContent key="home">
+            <Hero />
+            <FeaturesOverview />
+          </TabContent>
+        )}
+        
+        {activeTab === 'dashboard' && (
+          <TabContent key="dashboard">
+            <WalletDashboard 
+              onNavigateToPayment={() => setActiveTab('pay')}
+              onNavigateToSettings={() => setActiveTab('settings')}
+              onNavigateToAnalytics={() => setActiveTab('analytics')}
+              onNavigateToOffers={() => setActiveTab('offers')}
+            />
+          </TabContent>
+        )}
+        {activeTab === 'pay' && <TabContent key="pay"><PaymentFlow /></TabContent>}
+        {activeTab === 'p2p' && <TabContent key="p2p"><P2PPayment /></TabContent>}
+        {activeTab === 'history' && <TabContent key="history"><TransactionHistory /></TabContent>}
+        {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}
+        {activeTab === 'rewards' && <TabContent key="rewards"><RewardsSection /></TabContent>}
+        {activeTab === 'analytics' && <TabContent key="analytics"><Analytics /></TabContent>}
+        {activeTab === 'offers' && <TabContent key="offers"><Offers /></TabContent>}
+        {activeTab === 'chat' && <TabContent key="chat"><FinanceChatbot /></TabContent>}
+      </AnimatePresence>
     </div>
   );
 };
