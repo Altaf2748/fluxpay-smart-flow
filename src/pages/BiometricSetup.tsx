@@ -119,7 +119,10 @@ export default function BiometricSetup() {
     if (result.success) {
       setStep("done");
       toast({ title: "Biometric setup complete", description: "Your identity has been verified successfully." });
-      setTimeout(() => navigate("/", { replace: true }), 1500);
+      setTimeout(() => {
+        // Force a full reload so ProtectedRoute re-checks ekyc_enrolled
+        window.location.href = "/";
+      }, 1500);
     } else {
       toast({ title: "Setup failed", description: result.error || "Please try again.", variant: "destructive" });
       setStep("intro");
