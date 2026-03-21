@@ -1,4 +1,5 @@
-
+import EKYCEnroll from "./pages/EKYCEnroll";
+import EKYCVerify from "./pages/EKYCVerify";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            <Route path="/ekyc/enroll" element={<EKYCEnroll />} />
+            <Route path="/ekyc/verify" element={<EKYCVerify />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <ProtectedRoute>
