@@ -154,6 +154,7 @@ export type Database = {
           balance: number | null
           card_balance: number | null
           created_at: string
+          ekyc_enrolled: boolean | null
           failed_mpin_attempts: number | null
           first_name: string | null
           id: string
@@ -171,6 +172,7 @@ export type Database = {
           balance?: number | null
           card_balance?: number | null
           created_at?: string
+          ekyc_enrolled?: boolean | null
           failed_mpin_attempts?: number | null
           first_name?: string | null
           id?: string
@@ -188,6 +190,7 @@ export type Database = {
           balance?: number | null
           card_balance?: number | null
           created_at?: string
+          ekyc_enrolled?: boolean | null
           failed_mpin_attempts?: number | null
           first_name?: string | null
           id?: string
