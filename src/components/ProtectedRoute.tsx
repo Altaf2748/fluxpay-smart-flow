@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
+import { isEKYCEnrolled } from '@/lib/ekycStorage';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,8 +10,22 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const [ekycChecked, setEkycChecked] = useState(false);
+  const [ekycDone, setEkycDone] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!user) {
+      setEkycChecked(true);
+      return;
+    }
+    isEKYCEnrolled(user.id).then((enrolled) => {
+      setEkycDone(enrolled);
+      setEkycChecked(true);
+    });
+  }, [user]);
+
+  if (loading || !ekycChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -23,6 +38,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // If eKYC not done and not already on the setup page, redirect
+  if (!ekycDone && location.pathname !== '/biometric-setup') {
+    return <Navigate to="/biometric-setup" replace />;
   }
 
   return <>{children}</>;
