@@ -16,6 +16,11 @@ import { P2PPayment } from '@/components/P2PPayment';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { FinanceChatbot } from '@/components/FinanceChatbot';
+import { CheckCircle, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { isEKYCEnrolled } from '@/lib/ekycStorage';
+import { useNavigate } from 'react-router-dom';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -32,7 +37,15 @@ const TabContent = ({ children }: { children: React.ReactNode }) => (
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [storeOffer, setStoreOffer] = useState<any>(null);
+  const [ekycStatus, setEkycStatus] = useState<boolean | null>(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user?.id) {
+      isEKYCEnrolled(user.id).then(setEkycStatus);
+    }
+  }, [user?.id]);
 
   React.useEffect(() => {
     const targetTab = sessionStorage.getItem('targetTab');
@@ -66,6 +79,33 @@ const Index = () => {
         
         {activeTab === 'dashboard' && (
           <TabContent key="dashboard">
+            <div className="max-w-md mx-auto px-4 sm:px-6 mb-2 mt-4">
+              <Card className="border-border/50 bg-card">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {ekycStatus === null ? (
+                      <div className="h-5 w-48 bg-muted animate-pulse rounded"></div>
+                    ) : ekycStatus ? (
+                      <><CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="font-semibold text-green-600 tracking-tight">Identity Verified (e-KYC)</span></>
+                    ) : (
+                      <><AlertCircle className="w-5 h-5 text-yellow-500" />
+                      <span className="font-semibold text-yellow-600 tracking-tight">Identity not verified</span></>
+                    )}
+                  </div>
+                  {ekycStatus === true && (
+                    <Button variant="outline" size="sm" onClick={() => navigate('/ekyc/verify')}>
+                      Re-verify
+                    </Button>
+                  )}
+                  {ekycStatus === false && (
+                    <Button variant="default" size="sm" onClick={() => navigate('/biometric-setup')}>
+                      Set Up Now
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
             <WalletDashboard 
               onNavigateToPayment={() => setActiveTab('pay')}
               onNavigateToSettings={() => setActiveTab('settings')}

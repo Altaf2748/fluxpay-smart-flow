@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
-import { uploadEKYCMedia } from "@/lib/ekycStorage";
+import { uploadEKYCMedia, getEKYCMedia } from "@/lib/ekycStorage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -111,17 +111,81 @@ export default function BiometricSetup() {
     }
   };
 
+  // ── ENROLL IN BACKEND HELPER ──
+  const enrollInBackend = async (uid: string, email: string) => {
+    try {
+      const urls = await getEKYCMedia(uid);
+      if (urls.error || !urls.faceUrl || !urls.voiceUrl) throw new Error("Failed to get signed URLs");
+
+      const [faceRes, voiceRes] = await Promise.all([
+        fetch(urls.faceUrl), fetch(urls.voiceUrl)
+      ]);
+      const [faceBlob, voiceBlob] = await Promise.all([
+        faceRes.blob(), voiceRes.blob()
+      ]);
+
+      const blobToBase64 = (blob: Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      };
+
+      const faceB64 = await blobToBase64(faceBlob);
+      const voiceB64 = await blobToBase64(voiceBlob);
+
+      const backendRes = await fetch("http://localhost:8000/api/register_teacher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teacher_id: uid,
+          name: email,
+          image: faceB64,
+          audio: voiceB64,
+          robot_captured: false,
+          pending_approval: false
+        })
+      });
+
+      if (!backendRes.ok) throw new Error("Backend enrollment failed");
+      toast({ title: "Identity verified and secured successfully." });
+    } catch (e: any) {
+      const msg = e.message || "";
+      if (msg.includes("fetch") || msg.includes("NetworkError") || msg.includes("Failed to fetch")) {
+        toast({
+          title: "Warning",
+          description: "Cannot connect to verification server. Make sure the backend is running on port 8000.",
+          variant: "destructive"
+        });
+      } else {
+        toast({ 
+          title: "Warning", 
+          description: "Biometric backend enrollment failed. You can retry from Settings.", 
+          variant: "destructive" 
+        });
+      }
+    }
+  };
+
   // ── SAVE ──
   const handleSave = async () => {
     if (!user || !faceRef.current || !voiceRef.current) return;
     setStep("saving");
     const result = await uploadEKYCMedia(user.id, faceRef.current, voiceRef.current);
     if (result.success) {
+      // Enroll in Python backend (non-blocking — failure is tolerated)
+      enrollInBackend(user.id, user.email || "unknown").catch(() => {});
+
       setStep("done");
       toast({ title: "Biometric setup complete", description: "Your identity has been verified successfully." });
+
+      // Use React Router navigate so ProtectedRoute re-checks enrollment
+      // via the location.pathname dependency instead of a full page reload.
+      // A 1.5s delay lets the user see the success screen.
       setTimeout(() => {
-        // Force a full reload so ProtectedRoute re-checks ekyc_enrolled
-        window.location.href = "/";
+        navigate("/", { replace: true });
       }, 1500);
     } else {
       toast({ title: "Setup failed", description: result.error || "Please try again.", variant: "destructive" });

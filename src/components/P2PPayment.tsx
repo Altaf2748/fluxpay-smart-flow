@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Search, CheckCircle, XCircle, Loader2, QrCode, Scan } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MPINDialog } from './MPINDialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ResolvedContact {
   name: string;
@@ -28,9 +30,28 @@ export const P2PPayment = () => {
   const [resolving, setResolving] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showMPINDialog, setShowMPINDialog] = useState(false);
+  const [showEkycGate, setShowEkycGate] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [html5QrCode, setHtml5QrCode] = useState<Html5Qrcode | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.verifiedResult === 'ACCEPT' && location.state?.returnTab === 'p2p') {
+      const ps = location.state.paymentState;
+      if (ps) {
+        setAmount(ps.amount);
+        setNote(ps.note || '');
+        setResolvedContact(ps.recipient);
+        setStep('confirm');
+        // Clear state to avoid infinite loop
+        window.history.replaceState({}, document.title);
+        // Auto-show MPIN dialog
+        setShowMPINDialog(true);
+      }
+    }
+  }, [location.state]);
 
   useEffect(() => {
     // Check if there's a scanned recipient from QR code
@@ -281,6 +302,13 @@ export const P2PPayment = () => {
       });
       return;
     }
+    
+    // High Value Verification Gate
+    if (parseFloat(amount) > 1000) {
+      setShowEkycGate(true);
+      return;
+    }
+    
     setShowMPINDialog(true);
   };
 
@@ -563,6 +591,33 @@ export const P2PPayment = () => {
         onConfirm={processPayment}
         loading={loading}
       />
+
+      <Dialog open={showEkycGate} onOpenChange={setShowEkycGate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Security Verification Required</DialogTitle>
+            <DialogDescription>
+              To complete this payment of ₹{amount}, please verify your identity.
+            </DialogDescription>
+          </DialogHeader>
+          <Button 
+            className="w-full mt-4"
+            onClick={() => navigate('/ekyc/verify', { 
+              state: { 
+                returnTo: '/', 
+                returnTab: 'p2p',
+                paymentState: {
+                  amount,
+                  note,
+                  recipient: resolvedContact
+                }
+              } 
+            })}
+          >
+            Verify Now →
+          </Button>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

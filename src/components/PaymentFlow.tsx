@@ -11,6 +11,8 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MPINDialog } from './MPINDialog';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const FAMOUS_MERCHANTS = [
   'Starbucks', 'Amazon', 'Flipkart', 'Swiggy', 'Zomato', 'Netflix', 'Spotify', 'Apple', 
@@ -40,7 +42,25 @@ export const PaymentFlow = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [html5QrCode, setHtml5QrCode] = useState<Html5Qrcode | null>(null);
   const [scanMode, setScanMode] = useState<'merchant' | 'p2p'>('merchant');
+  const [showEkycGate, setShowEkycGate] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.verifiedResult === 'ACCEPT' && location.state?.returnTab === 'pay') {
+      const ps = location.state.paymentState;
+      if (ps) {
+        setAmount(ps.amount);
+        setMerchant(ps.merchant);
+        setCouponCode(ps.couponCode);
+        setSelectedMethod(ps.selectedMethod);
+        setShowRouting(true);
+        window.history.replaceState({}, document.title);
+        setShowMpinDialog(true);
+      }
+    }
+  }, [location.state]);
 
   useEffect(() => {
     fetchOffers();
@@ -181,6 +201,11 @@ export const PaymentFlow = () => {
         description: "Amount must be between ₹1 and ₹100,000",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (amt > 1000) {
+      setShowEkycGate(true);
       return;
     }
 
@@ -819,6 +844,34 @@ export const PaymentFlow = () => {
         onConfirm={handleMpinConfirm}
         loading={paymentLoading}
       />
+
+      <Dialog open={showEkycGate} onOpenChange={setShowEkycGate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Security Verification Required</DialogTitle>
+            <DialogDescription>
+              To complete this payment of ₹{amount}, please verify your identity.
+            </DialogDescription>
+          </DialogHeader>
+          <Button 
+            className="w-full mt-4"
+            onClick={() => navigate('/ekyc/verify', { 
+              state: { 
+                returnTo: '/', 
+                returnTab: 'pay',
+                paymentState: {
+                  amount,
+                  merchant,
+                  couponCode,
+                  selectedMethod
+                }
+              } 
+            })}
+          >
+            Verify Now →
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
