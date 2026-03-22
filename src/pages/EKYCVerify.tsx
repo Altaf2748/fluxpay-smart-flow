@@ -15,6 +15,9 @@ export default function EKYCVerify() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Capture the full incoming state once so it's preserved across re-renders
+  const incomingState = useRef<any>(location.state || {});
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -24,49 +27,62 @@ export default function EKYCVerify() {
   }, []);
 
   const runVerification = async () => {
-    setRunning(true); setResult(null);
+    setRunning(true);
+    setResult(null);
 
     try {
-      // Step 1: Capture face
+      // ── Step 1: Capture face ──────────────────────────────────────────────
       setStatus("Capturing your face...");
       const vidStream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = vidStream;
         await videoRef.current.play();
       }
-      const faceBlob: Blob = await new Promise(resolve => {
+      const faceBlob: Blob = await new Promise((resolve) => {
         setTimeout(() => {
           const c = document.createElement("canvas");
-          c.width = 640; c.height = 480;
+          c.width = 640;
+          c.height = 480;
           if (videoRef.current) c.getContext("2d")!.drawImage(videoRef.current, 0, 0, 640, 480);
-          c.toBlob(b => resolve(b!), "image/jpeg", 0.92);
-          vidStream.getTracks().forEach(t => t.stop());
+          c.toBlob((b) => resolve(b!), "image/jpeg", 0.92);
+          vidStream.getTracks().forEach((t) => t.stop());
         }, 2500);
       });
 
-      // Step 2: Capture voice
+      // ── Step 2: Capture voice ─────────────────────────────────────────────
       setStatus("Recording your voice...");
       const audStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const voiceBlob: Blob = await new Promise(resolve => {
+      const voiceBlob: Blob = await new Promise((resolve) => {
         const rec = new MediaRecorder(audStream);
         const chunks: BlobPart[] = [];
-        rec.ondataavailable = e => chunks.push(e.data);
+        rec.ondataavailable = (e) => chunks.push(e.data);
         rec.onstop = () => { resolve(new Blob(chunks, { type: "audio/wav" })); };
         rec.start();
-        setTimeout(() => { rec.stop(); audStream.getTracks().forEach(t => t.stop()); }, 4000);
+        setTimeout(() => {
+          rec.stop();
+          audStream.getTracks().forEach((t) => t.stop());
+        }, 4000);
       });
 
-      // Step 3: Call fusion API
+      // ── Step 3: Call fusion API ───────────────────────────────────────────
       setStatus("Verifying identity...");
       const res = await verifyUser(faceBlob, voiceBlob);
       setResult(res);
-      
+
       if (res.decision === "ACCEPT") {
         setStatus("✅ Identity Verified");
-        const returnTo = location.state?.returnTo;
+        const returnTo = incomingState.current?.returnTo;
         if (returnTo) {
+          // Pass ALL original state back (pendingPayment details etc.)
+          // plus the verifiedResult flag so the payment page can auto-resume
           setTimeout(() => {
-            navigate(returnTo, { state: { ...location.state, verifiedResult: "ACCEPT" }, replace: true });
+            navigate(returnTo, {
+              state: {
+                ...incomingState.current,
+                verifiedResult: "ACCEPT",
+              },
+              replace: true,
+            });
           }, 2000);
         }
       } else {
@@ -95,7 +111,7 @@ export default function EKYCVerify() {
         </Button>
         <h1 className="text-xl font-bold">Identity Verification</h1>
       </div>
-      
+
       <Card className="w-full max-w-md border-border/50">
         <CardHeader>
           <CardTitle>Security Check</CardTitle>
@@ -103,14 +119,18 @@ export default function EKYCVerify() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center">
-            {(!videoRef.current || !running) && !result && (
+            {!running && !result && (
               <span className="text-muted-foreground/50 text-sm">Camera will appear here</span>
             )}
             <video ref={videoRef} className="w-full h-full object-cover absolute inset-0" muted playsInline />
           </div>
 
           {!result && (
-            <Button onClick={runVerification} disabled={running} className="w-full h-12 gradient-primary text-white font-semibold glow">
+            <Button
+              onClick={runVerification}
+              disabled={running}
+              className="w-full h-12 gradient-primary text-white font-semibold glow"
+            >
               {running ? "Verifying..." : "Verify Now →"}
             </Button>
           )}
@@ -130,7 +150,7 @@ export default function EKYCVerify() {
                 <p>Voice Match: {(result.voice?.score * 100).toFixed(1)}%</p>
                 <p>Final Confidence: {(result.fusion?.fused_score * 100).toFixed(1)}%</p>
               </div>
-              {location.state?.returnTo && (
+              {incomingState.current?.returnTo && (
                 <p className="text-xs text-green-600 mt-2">Returning automatically...</p>
               )}
             </div>
@@ -140,8 +160,14 @@ export default function EKYCVerify() {
             <div className="p-6 rounded-xl text-center bg-destructive/10 border border-destructive/20 space-y-4">
               <XCircle className="w-12 h-12 text-destructive mx-auto" />
               <h3 className="font-bold text-destructive text-lg">Verification Failed</h3>
-              <p className="text-sm text-destructive/80 font-medium">{result.reason || "Unable to confirm your identity"}</p>
-              <Button onClick={runVerification} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10">
+              <p className="text-sm text-destructive/80 font-medium">
+                {result.reason || "Unable to confirm your identity"}
+              </p>
+              <Button
+                onClick={runVerification}
+                variant="outline"
+                className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+              >
                 Try Again
               </Button>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Hero } from '@/components/Hero';
 import { WalletDashboard } from '@/components/WalletDashboard';
@@ -20,7 +20,7 @@ import { CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { isEKYCEnrolled } from '@/lib/ekycStorage';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -34,12 +34,24 @@ const TabContent = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
+type VerificationReturn = {
+  returnTab: string;
+  pendingPayment: any;
+  verifiedResult: 'ACCEPT' | 'REJECT';
+};
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [storeOffer, setStoreOffer] = useState<any>(null);
   const [ekycStatus, setEkycStatus] = useState<boolean | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Verification return payload — stored in STATE (not a ref) so that when
+  // onVerificationConsumed clears it, Index re-renders and passes null to the
+  // child, preventing any future remount from re-triggering the payment.
+  const [verificationReturn, setVerificationReturn] = useState<VerificationReturn | null>(null);
 
   React.useEffect(() => {
     if (user?.id) {
@@ -47,12 +59,37 @@ const Index = () => {
     }
   }, [user?.id]);
 
-  React.useEffect(() => {
-    const targetTab = sessionStorage.getItem('targetTab');
-    if (targetTab) {
-      setActiveTab(targetTab);
-      sessionStorage.removeItem('targetTab');
+  // On mount: check if we're returning from /ekyc/verify with a verified payment
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.verifiedResult === 'ACCEPT' && state?.returnTab) {
+      // Store in state so clearing it triggers a re-render → child receives null
+      setVerificationReturn({
+        returnTab: state.returnTab,
+        pendingPayment: state.pendingPayment,
+        verifiedResult: 'ACCEPT',
+      });
+
+      // Switch to the correct tab immediately so the component mounts
+      setActiveTab(state.returnTab);
+
+      // Clear the location state so back-navigation doesn't re-trigger
+      navigate('/', { replace: true, state: {} });
+    } else {
+      // Normal tab restoration from sessionStorage (for brand store checkout etc.)
+      const targetTab = sessionStorage.getItem('targetTab');
+      if (targetTab) {
+        setActiveTab(targetTab);
+        sessionStorage.removeItem('targetTab');
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Called by the payment component the moment it has consumed the payload.
+  // Clears the state so any future remount of the payment tab receives null.
+  const handleVerificationConsumed = React.useCallback(() => {
+    setVerificationReturn(null);
   }, []);
 
   const handleOpenStore = (offer: any) => {
@@ -64,6 +101,9 @@ const Index = () => {
     sessionStorage.setItem('cartCheckout', JSON.stringify({ merchant, amount, couponCode }));
     setActiveTab('pay');
   };
+
+  const payVerification = verificationReturn?.returnTab === 'pay' ? verificationReturn : null;
+  const p2pVerification = verificationReturn?.returnTab === 'p2p' ? verificationReturn : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,8 +154,22 @@ const Index = () => {
             />
           </TabContent>
         )}
-        {activeTab === 'pay' && <TabContent key="pay"><PaymentFlow /></TabContent>}
-        {activeTab === 'p2p' && <TabContent key="p2p"><P2PPayment /></TabContent>}
+        {activeTab === 'pay' && (
+          <TabContent key="pay">
+            <PaymentFlow
+              verificationReturn={payVerification}
+              onVerificationConsumed={handleVerificationConsumed}
+            />
+          </TabContent>
+        )}
+        {activeTab === 'p2p' && (
+          <TabContent key="p2p">
+            <P2PPayment
+              verificationReturn={p2pVerification}
+              onVerificationConsumed={handleVerificationConsumed}
+            />
+          </TabContent>
+        )}
         {activeTab === 'history' && <TabContent key="history"><TransactionHistory onViewReceipts={() => setActiveTab('receipts')} /></TabContent>}
         {activeTab === 'receipts' && <TabContent key="receipts"><Receipts onBack={() => setActiveTab('history')} /></TabContent>}
         {activeTab === 'settings' && <TabContent key="settings"><Settings /></TabContent>}

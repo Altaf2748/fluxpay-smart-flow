@@ -20,7 +20,16 @@ interface ResolvedContact {
   verified: boolean;
 }
 
-export const P2PPayment = () => {
+interface P2PPaymentProps {
+  verificationReturn?: {
+    returnTab: string;
+    pendingPayment: any;
+    verifiedResult: 'ACCEPT' | 'REJECT';
+  } | null;
+  onVerificationConsumed?: () => void;
+}
+
+export const P2PPayment = ({ verificationReturn, onVerificationConsumed }: P2PPaymentProps) => {
   const [step, setStep] = useState<'search' | 'confirm' | 'result'>('search');
   const [identifier, setIdentifier] = useState('');
   const [amount, setAmount] = useState('');
@@ -37,21 +46,23 @@ export const P2PPayment = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const vrConsumed = React.useRef(false);
   useEffect(() => {
-    if (location.state?.verifiedResult === 'ACCEPT' && location.state?.returnTab === 'p2p') {
-      const ps = location.state.paymentState;
+    if (!vrConsumed.current && verificationReturn?.verifiedResult === 'ACCEPT') {
+      vrConsumed.current = true;
+      const ps = verificationReturn.pendingPayment;
+      // Clear the payload in Index.tsx IMMEDIATELY so future remounts get null
+      onVerificationConsumed?.();
       if (ps) {
-        setAmount(ps.amount);
+        setAmount(ps.amount || '');
         setNote(ps.note || '');
-        setResolvedContact(ps.recipient);
+        setResolvedContact(ps.recipient || null);
         setStep('confirm');
-        // Clear state to avoid infinite loop
-        window.history.replaceState({}, document.title);
-        // Auto-show MPIN dialog
-        setShowMPINDialog(true);
+        setTimeout(() => setShowMPINDialog(true), 150);
       }
     }
-  }, [location.state]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // Check if there's a scanned recipient from QR code
@@ -604,9 +615,9 @@ export const P2PPayment = () => {
             className="w-full mt-4"
             onClick={() => navigate('/ekyc/verify', { 
               state: { 
-                returnTo: '/', 
+                returnTo: '/',
                 returnTab: 'p2p',
-                paymentState: {
+                pendingPayment: {
                   amount,
                   note,
                   recipient: resolvedContact

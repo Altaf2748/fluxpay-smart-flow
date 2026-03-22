@@ -24,7 +24,16 @@ const FAMOUS_MERCHANTS = [
   'Sony', 'LG', 'Philips', 'Boat', 'JBL', 'Bose'
 ];
 
-export const PaymentFlow = () => {
+interface PaymentFlowProps {
+  verificationReturn?: {
+    returnTab: string;
+    pendingPayment: any;
+    verifiedResult: 'ACCEPT' | 'REJECT';
+  } | null;
+  onVerificationConsumed?: () => void;
+}
+
+export const PaymentFlow = ({ verificationReturn, onVerificationConsumed }: PaymentFlowProps) => {
   const [amount, setAmount] = useState('');
   const [merchant, setMerchant] = useState('');
   const [couponCode, setCouponCode] = useState('');
@@ -47,20 +56,28 @@ export const PaymentFlow = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Consume verificationReturn prop on mount — prop comes from Index.tsx
+  // which already switched to this tab before mounting this component.
+  // This is reliable because it runs once when the component first mounts.
+  const vrConsumed = React.useRef(false);
   useEffect(() => {
-    if (location.state?.verifiedResult === 'ACCEPT' && location.state?.returnTab === 'pay') {
-      const ps = location.state.paymentState;
+    if (!vrConsumed.current && verificationReturn?.verifiedResult === 'ACCEPT') {
+      vrConsumed.current = true;
+      const ps = verificationReturn.pendingPayment;
+      // Clear the payload in Index.tsx IMMEDIATELY so future remounts get null
+      onVerificationConsumed?.();
       if (ps) {
-        setAmount(ps.amount);
-        setMerchant(ps.merchant);
-        setCouponCode(ps.couponCode);
-        setSelectedMethod(ps.selectedMethod);
+        setAmount(ps.amount || '');
+        setMerchant(ps.merchant || '');
+        setCouponCode(ps.couponCode || '');
+        setSelectedMethod(ps.selectedMethod || '');
         setShowRouting(true);
-        window.history.replaceState({}, document.title);
-        setShowMpinDialog(true);
+        // Slight delay so React batches the state updates before dialog opens
+        setTimeout(() => setShowMpinDialog(true), 150);
       }
     }
-  }, [location.state]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchOffers();
@@ -857,9 +874,9 @@ export const PaymentFlow = () => {
             className="w-full mt-4"
             onClick={() => navigate('/ekyc/verify', { 
               state: { 
-                returnTo: '/', 
+                returnTo: '/',
                 returnTab: 'pay',
-                paymentState: {
+                pendingPayment: {
                   amount,
                   merchant,
                   couponCode,
