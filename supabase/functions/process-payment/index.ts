@@ -93,7 +93,7 @@ serve(async (req) => {
     // Verify MPIN (supports bcrypt and legacy SHA-256)
     let mpinValid = false;
     if (profile.mpin_hash.startsWith('$2')) {
-      mpinValid = await bcrypt.compare(mpin, profile.mpin_hash);
+      mpinValid = bcrypt.compareSync(mpin, profile.mpin_hash);
     } else {
       const mpinHash = createHash('sha256').update(mpin).digest('hex');
       mpinValid = mpinHash === profile.mpin_hash;
