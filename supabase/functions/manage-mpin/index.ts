@@ -87,7 +87,7 @@ serve(async (req) => {
         }
       }
 
-      const valid = await verifyMpinHash(mpin, profile.mpin_hash)
+      const valid = verifyMpinHash(mpin, profile.mpin_hash)
 
       if (!valid) {
         const failedAttempts = (profile.failed_mpin_attempts || 0) + 1
@@ -117,7 +117,7 @@ serve(async (req) => {
       }
       // Migrate from SHA-256 to bcrypt if needed
       if (!profile.mpin_hash.startsWith('$2')) {
-        updateData.mpin_hash = await bcrypt.hash(mpin)
+        updateData.mpin_hash = bcrypt.hashSync(mpin)
       }
       await supabaseAdmin.from('profiles').update(updateData).eq('user_id', user.id)
 
@@ -140,7 +140,7 @@ serve(async (req) => {
         })
       }
 
-      const hashed = await bcrypt.hash(mpin)
+      const hashed = bcrypt.hashSync(mpin)
       await supabaseAdmin.from('profiles').update({ mpin_hash: hashed }).eq('user_id', user.id)
 
       return new Response(JSON.stringify({ success: true }), {
@@ -177,7 +177,7 @@ serve(async (req) => {
           }
         }
 
-        const valid = await verifyMpinHash(currentMpin, profile.mpin_hash)
+        const valid = verifyMpinHash(currentMpin, profile.mpin_hash)
         if (!valid) {
           const failedAttempts = (profile.failed_mpin_attempts || 0) + 1
           const updateData: Record<string, unknown> = {
@@ -219,7 +219,7 @@ serve(async (req) => {
         })
       }
 
-      const hashed = await bcrypt.hash(newMpin)
+      const hashed = bcrypt.hashSync(newMpin)
       await supabaseAdmin.from('profiles').update({
         mpin_hash: hashed,
         failed_mpin_attempts: 0,
@@ -245,9 +245,9 @@ serve(async (req) => {
 })
 
 /** Verify MPIN against stored hash (supports both bcrypt and legacy SHA-256) */
-async function verifyMpinHash(mpin: string, storedHash: string): Promise<boolean> {
+function verifyMpinHash(mpin: string, storedHash: string): boolean {
   if (storedHash.startsWith('$2')) {
-    return await bcrypt.compare(mpin, storedHash)
+    return bcrypt.compareSync(mpin, storedHash)
   }
   // Legacy SHA-256
   const sha256 = createHash('sha256').update(mpin).digest('hex')
